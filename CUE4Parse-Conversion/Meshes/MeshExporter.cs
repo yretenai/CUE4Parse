@@ -300,13 +300,13 @@ namespace CUE4Parse_Conversion.Meshes
             mainHdr.TypeFlag = Constants.PSK_VERSION;
             Ar.SerializeChunkHeader(mainHdr, "ACTRHEAD");
 
-            var numPoints = share.Points.Count;
+            var numPoints = verts.Length;
             ptsHdr.DataCount = numPoints;
             ptsHdr.DataSize = 12;
             Ar.SerializeChunkHeader(ptsHdr, "PNTS0000");
             for (var i = 0; i < numPoints; i++)
             {
-                var point = share.Points[i];
+                var point = verts[i].Position;
                 point.Y = -point.Y; // MIRROR_MESH
                 point.Serialize(Ar);
             }
@@ -330,7 +330,7 @@ namespace CUE4Parse_Conversion.Meshes
             Ar.SerializeChunkHeader(wedgHdr, "VTXW0000");
             for (var i = 0; i < numVerts; i++)
             {
-                Ar.Write(share.WedgeToVert[i]);
+                Ar.Write(i);
                 Ar.Write(verts[i].UV.U);
                 Ar.Write(verts[i].UV.V);
                 Ar.Write((byte) wedgeMat[i]);
@@ -395,20 +395,20 @@ namespace CUE4Parse_Conversion.Meshes
                 if (sections[i].Material?.Load<UMaterialInterface>() is { } tex)
                 {
                     materialName = tex.Name;
-                    materialExports?.Add(new MaterialExporter2(tex, Options));
+                    // materialExports?.Add(new MaterialExporter2(tex, Options));
                 }
                 else materialName = $"material_{i}";
 
                 new VMaterial(materialName, i, 0u, 0, 0u, 0, 0).Serialize(Ar);
             }
 
-            var numNormals = share.Normals.Count;
+            var numNormals = numVerts;
             normHdr.DataCount = numNormals;
             normHdr.DataSize = 12;
             Ar.SerializeChunkHeader(normHdr, "VTXNORMS");
             for (var i = 0; i < numNormals; i++)
             {
-                var normal = (FVector)share.Normals[i];
+                var normal = (FVector) verts[i].Normal;
 
                 // Normalize
                 normal /= MathF.Sqrt(normal | normal);
