@@ -5,7 +5,7 @@
     <LangVersion>default</LangVersion>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <IsPublishable>false</IsPublishable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -22,15 +22,12 @@
   <ItemGroup>
     <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0023" />
     <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0-alpha0023" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.2" />
     <PackageReference Include="SkiaSharp" Version="2.88.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\CUE4Parse\CUE4Parse.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Resources" />
   </ItemGroup>
 
   <ItemGroup>

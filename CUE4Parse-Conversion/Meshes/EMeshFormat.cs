@@ -11,4 +11,12 @@ namespace CUE4Parse_Conversion.Meshes
         [Description("Wavefront OBJ (Not Implemented)")]
         OBJ
     }
+
+    public enum EAnimFormat
+    {
+        [Description("ActorX (psax, new format)")]
+        ActorX,
+        [Description("ActorX (psa, old format)")]
+        LegacyActorX,
+    }
 }

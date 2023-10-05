@@ -18,6 +18,7 @@ namespace CUE4Parse_Conversion
     {
         public ELodFormat LodFormat;
         public EMeshFormat MeshFormat;
+        public EAnimFormat AnimFormat;
         public EMaterialFormat MaterialFormat;
         public ETextureFormat TextureFormat;
         public ETexturePlatform Platform;
@@ -29,6 +30,7 @@ namespace CUE4Parse_Conversion
         {
             LodFormat = ELodFormat.FirstLod;
             MeshFormat = EMeshFormat.ActorX;
+            AnimFormat = EAnimFormat.ActorX;
             MaterialFormat = EMaterialFormat.AllLayersNoRef;
             TextureFormat = ETextureFormat.Png;
             Platform = ETexturePlatform.DesktopMobile;

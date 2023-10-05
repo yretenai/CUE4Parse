@@ -20,38 +20,45 @@ namespace CUE4Parse_Conversion.Animations
             AnimSequences = new List<Anim>();
         }
 
-        private AnimExporter(ExporterOptions options, UObject export, CAnimSet animSet)
+        private AnimExporter(ExporterOptions options, UObject export, CAnimSet animSet, int index = -1)
             : this(export, options)
         {
-            for (int sequenceIndex = 0; sequenceIndex < animSet.Sequences.Count; sequenceIndex++)
+            if (index == -1)
             {
-                DoExportPsa(animSet, sequenceIndex);
+                for (int sequenceIndex = 0; sequenceIndex < animSet.Sequences.Count; sequenceIndex++)
+                {
+                    DoExportPsa(animSet, sequenceIndex);
+                }
+            }
+            else
+            {
+                DoExportPsa(animSet, index);
             }
         }
 
-        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimSequence? animSequence = null)
-            : this(options, animSequence != null ? animSequence : skeleton, skeleton.ConvertAnims(animSequence))
+        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimSequence? animSequence = null, int index = -1)
+            : this(options, animSequence != null ? animSequence : skeleton, skeleton.ConvertAnims(animSequence), index: index)
         {
 
         }
 
-        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimMontage? animMontage = null)
-            : this(options, animMontage != null ? animMontage : skeleton, skeleton.ConvertAnims(animMontage))
+        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimMontage? animMontage = null, int index = -1)
+            : this(options, animMontage != null ? animMontage : skeleton, skeleton.ConvertAnims(animMontage), index: index)
         {
 
         }
 
-        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimComposite? animComposite = null)
-            : this(options, animComposite != null ? animComposite : skeleton, skeleton.ConvertAnims(animComposite))
+        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimComposite? animComposite = null, int index = -1)
+            : this(options, animComposite != null ? animComposite : skeleton, skeleton.ConvertAnims(animComposite), index: index)
         {
 
         }
 
-        public AnimExporter(UAnimSequence animSequence, ExporterOptions options) : this(options, animSequence.Skeleton.Load<USkeleton>()!, animSequence) { }
-        public AnimExporter(UAnimMontage animMontage, ExporterOptions options) : this(options, animMontage.Skeleton.Load<USkeleton>()!, animMontage) { }
-        public AnimExporter(UAnimComposite animComposite, ExporterOptions options) : this(options, animComposite.Skeleton.Load<USkeleton>()!, animComposite) { }
+        public AnimExporter(UAnimSequence animSequence, ExporterOptions options, int index = -1) : this(options, animSequence.Skeleton.Load<USkeleton>()!, animSequence, index: index) { }
+        public AnimExporter(UAnimMontage animMontage, ExporterOptions options, int index = -1) : this(options, animMontage.Skeleton.Load<USkeleton>()!, animMontage, index: index) { }
+        public AnimExporter(UAnimComposite animComposite, ExporterOptions options, int index = -1) : this(options, animComposite.Skeleton.Load<USkeleton>()!, animComposite, index: index) { }
 
-        private void DoExportPsa(CAnimSet anim, int seqIdx)
+        protected virtual void DoExportPsa(CAnimSet anim, int seqIdx)
         {
             var Ar = new FArchiveWriter();
             var mainHdr = new VChunkHeader { TypeFlag = Constants.PSA_VERSION };
