@@ -12,6 +12,7 @@ using CUE4Parse.UE4.Writers;
 using CUE4Parse_Conversion.ActorX;
 using CUE4Parse_Conversion.Materials;
 using CUE4Parse_Conversion.Meshes.PSK;
+using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using Serilog;
@@ -94,6 +95,27 @@ namespace CUE4Parse_Conversion.Meshes
                 }
             }
         }
+        private List<UMorphTarget> CollectMorphs(USkeletalMesh mesh)
+        {
+            var morphProperties = mesh.GetOrDefault<UScriptArray>("MorphTargets");
+            var morphs = new List<UMorphTarget>();
+            if (morphProperties == null) {
+                return morphs;
+            }
+
+            foreach (var morphProperty in morphProperties.Properties)
+            {
+                if (morphProperty.GenericValue is FPackageIndex morphIndex)
+                {
+                    if (morphIndex.TryLoad<UMorphTarget>(out var morph))
+                    {
+                        morphs.Add(morph);
+                    }
+                }
+            }
+
+            return morphs;
+        }
 
         public MeshExporter(USkeletalMesh originalMesh, ExporterOptions options) : base(originalMesh, options)
         {
@@ -116,6 +138,28 @@ namespace CUE4Parse_Conversion.Meshes
             }
 
             var i = 0;
+            
+            var morphs = CollectMorphs(originalMesh);
+            var morphLods = new List<List<KeyValuePair<string, FMorphTargetLODModel>>>();
+            foreach (var morph in morphs)
+            {
+                if (morph.MorphLODModels == null)
+                {
+                    continue;
+                }
+
+                for (var index = 0; index < morph.MorphLODModels.Length; index++)
+                {
+                    var morphLod = morph.MorphLODModels[index];
+                    if (morphLods.Count <= index)
+                    {
+                        morphLods.Add(new List<KeyValuePair<string, FMorphTargetLODModel>>());
+                    }
+
+                    morphLods[index].Add(new KeyValuePair<string, FMorphTargetLODModel>(morph.Name, morphLod));
+                }
+            }
+            
             for (var lodIndex = 0; lodIndex < convertedMesh.LODs.Count; lodIndex++)
             {
                 var lod = convertedMesh.LODs[lodIndex];
@@ -132,7 +176,7 @@ namespace CUE4Parse_Conversion.Meshes
                 {
                     case EMeshFormat.ActorX:
                         ext = convertedMesh.LODs[i].NumVerts > 65536 ? "pskx" : "psk";
-                        ExportSkeletalMeshLod(lod, convertedMesh.RefSkeleton, Ar, materialExports,
+                        ExportSkeletalMeshLod(lod, convertedMesh.RefSkeleton, morphLods.ElementAtOrDefault(lodIndex), Ar, materialExports,
                             Options.ExportMorphTargets ? originalMesh.MorphTargets : null,
                             totalSockets.ToArray(), lodIndex);
                         break;
@@ -188,7 +232,7 @@ namespace CUE4Parse_Conversion.Meshes
             ExportExtraUV(Ar, lod.ExtraUV.Value, lod.NumVerts, lod.NumTexCoords);
         }
 
-        private void ExportSkeletalMeshLod(CSkelMeshLod lod, List<CSkelMeshBone> bones, FArchiveWriter Ar, List<MaterialExporter2>? materialExports, FPackageIndex[]? morphTargets, FPackageIndex[] sockets, int lodIndex)
+        private void ExportSkeletalMeshLod(CSkelMeshLod lod, List<CSkelMeshBone> bones,  List<KeyValuePair<string, FMorphTargetLODModel>>? morphs, FArchiveWriter Ar, List<MaterialExporter2>? materialExports, FPackageIndex[]? morphTargets, FPackageIndex[] sockets, int lodIndex)
         {
             var share = new CVertexShare();
             var infHdr = new VChunkHeader();
@@ -240,7 +284,7 @@ namespace CUE4Parse_Conversion.Meshes
 
             ExportVertexColors(Ar, lod.VertexColors, lod.NumVerts);
             ExportExtraUV(Ar, lod.ExtraUV.Value, lod.NumVerts, lod.NumTexCoords);
-            ExportMorphTargets(Ar, lod, share, morphTargets, lodIndex);
+            ExportMorphDataAda(Ar, morphs, lod.Verts);
         }
 
         private void ExportCommonMeshData(FArchiveWriter Ar, CMeshSection[] sections, CMeshVertex[] verts,
@@ -433,6 +477,43 @@ namespace CUE4Parse_Conversion.Meshes
                 {
                     extraUV[i - 1][j].Serialize(Ar);
                 }
+            }
+        }
+        
+        private void ExportMorphDataAda(FArchiveWriter Ar, List<KeyValuePair<string, FMorphTargetLODModel>> morphs, CSkelMeshVertex[] verts)
+        {
+            var targetIndex = 0;
+            var morphNames = new List<string>(morphs.Count);
+            
+            foreach (var (morphName, morphLod) in morphs)
+            {
+                var mrphHdr = new VChunkHeader {
+                    DataSize = 16,
+                    DataCount = morphLod.Vertices.Length
+                };
+                
+                Ar.SerializeChunkHeader(mrphHdr, $"MORPHTARGET{targetIndex++}");
+                morphNames.Add(morphName);
+
+                foreach (var morphVertex in morphLod.Vertices)
+                {
+                    Ar.Write(morphVertex.SourceIdx);
+                    var pos = verts[morphVertex.SourceIdx].Position + morphVertex.PositionDelta;
+                    pos.Y = -pos.Y;
+                    pos.Serialize(Ar);
+                }
+            }
+
+            var morphNameHeader = new VChunkHeader
+            {
+                DataSize = 64,
+                DataCount = morphNames.Count
+            };
+            
+            Ar.SerializeChunkHeader(morphNameHeader, "MORPHNAMES");
+            foreach (var morphName in morphNames)
+            {
+                Ar.Write(morphName, 64);
             }
         }
 
