@@ -480,8 +480,13 @@ namespace CUE4Parse_Conversion.Meshes
             }
         }
         
-        private void ExportMorphDataAda(FArchiveWriter Ar, List<KeyValuePair<string, FMorphTargetLODModel>> morphs, CSkelMeshVertex[] verts)
+        private void ExportMorphDataAda(FArchiveWriter Ar, List<KeyValuePair<string, FMorphTargetLODModel>>? morphs, CSkelMeshVertex[] verts)
         {
+            if (morphs == null)
+            {
+                return;
+            }
+            
             var targetIndex = 0;
             var morphNames = new List<string>(morphs.Count);
             
