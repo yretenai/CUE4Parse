@@ -82,6 +82,25 @@ public static class Program {
             }
         }
 
+        if (File.Exists(Path.Combine(target, "keys.txt"))) {
+            var lines = await File.ReadAllLinesAsync(Path.Combine(target, "keys.txt"));
+            var keys = lines.Where(x => x.Trim().Length >= 32).Select(x => {
+                // formats:
+                // key{s;32}
+                // guid{s:32} key{s:32}
+                x = x.Trim();
+                var hasGuid = x.Length > 32;
+                var guid = new FGuid();
+                if (hasGuid) {
+                    guid = new FGuid(x[..32].Trim());
+                }
+
+                return new KeyValuePair<FGuid, FAesKey>(guid, new FAesKey(x));
+            }).Where(x => !string.IsNullOrEmpty(x.Value.KeyString));
+
+            await Provider.SubmitKeysAsync(keys);
+        }
+
         await Provider.MountAsync();
 
         foreach (var keyGuid in Provider.RequiredKeys) {
@@ -139,13 +158,12 @@ public static class Program {
                 continue;
             }
 
-
             var historyType = History.HistoryType.New;
             if (!flags.Dry) {
                 var historyEntry = await history.Add(Provider, gameFile);
                 historyType = oldHistory.Has(historyEntry);
             }
-            
+
             if (gameFile is VfsEntry vfs) {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile} from {Source}", pc, historyType, gameFile, vfs.Vfs.Name);
             }

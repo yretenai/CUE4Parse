@@ -14,6 +14,11 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
         public override void Deserialize(FAssetArchive Ar, long validPos)
         {
             base.Deserialize(Ar, validPos);
+            
+            if (Ar.Game == EGame.GAME_CarnalInstinct)
+            {
+                Ar.Position += 4;
+            }
 
             if (Ar.Owner?.Provider?.InternalGameName.ToUpper() == "FORTNITEGAME")
             {
