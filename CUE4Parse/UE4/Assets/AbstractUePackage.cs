@@ -64,6 +64,12 @@ namespace CUE4Parse.UE4.Assets
             var validPos = serialOffset + serialSize;
             try
             {
+                if (obj.ExportType == "MovieSceneCompiledData")
+                {
+                    Log.Warning("Skipping MovieSceneCompiledData because it will crash");
+                    return;
+                }
+                
                 obj.Deserialize(Ar, validPos);
 #if DEBUG
                 var remaining = validPos - Ar.Position;

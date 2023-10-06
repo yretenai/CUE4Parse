@@ -24,6 +24,7 @@ using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Sounds;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Worlds;
+using CUE4Parse.MappingsProvider;
 using CUE4Parse.UE4.VirtualFileSystem;
 using DragonLib;
 using DragonLib.CommandLine;
@@ -51,6 +52,10 @@ public static class Program {
             .CreateLogger();
 
         using var Provider = new DefaultFileProvider(Path.GetFullPath(flags.PakPath), SearchOption.AllDirectories, false, new VersionContainer(flags.Game, flags.Platform));
+        if (File.Exists(flags.Mappings)) {
+            Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(flags.Mappings);
+        }
+
         Provider.Initialize();
         if (flags.Keys.Any()) {
             var keys = flags.Keys.Select(x => new FAesKey(x)).ToList();
@@ -134,13 +139,22 @@ public static class Program {
                 continue;
             }
 
-            var historyEntry = await history.Add(Provider, gameFile);
-            var historyType = oldHistory.Has(historyEntry);
+
+            var historyType = History.HistoryType.New;
+            if (!flags.Dry) {
+                var historyEntry = await history.Add(Provider, gameFile);
+                historyType = oldHistory.Has(historyEntry);
+            }
+            
             if (gameFile is VfsEntry vfs) {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile} from {Source}", pc, historyType, gameFile, vfs.Vfs.Name);
             }
             else {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile}", pc, historyType, gameFile);
+            }
+
+            if (flags.Dry) {
+                continue;
             }
 
             if (historyType == History.HistoryType.Same) {
@@ -287,19 +301,19 @@ public static class Program {
                                         }
                                         case USkeletalMesh skeletalMesh when !flags.NoMeshes: {
                                             target.EnsureDirectoryExists();
-                                            var exporter = new MeshExporter(skeletalMesh, exportOptions);
+                                            var exporter = new MeshExporter(skeletalMesh, exportOptions, exportIndex);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case USkeleton skeleton when !flags.NoMeshes: {
                                             target.EnsureDirectoryExists();
-                                            var exporter = new MeshExporter(skeleton, exportOptions);
+                                            var exporter = new MeshExporter(skeleton, exportOptions, exportIndex);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UStaticMesh staticMesh when !flags.NoMeshes: {
                                             target.EnsureDirectoryExists();
-                                            var exporter = new MeshExporter(staticMesh, exportOptions);
+                                            var exporter = new MeshExporter(staticMesh, exportOptions, exportIndex);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }

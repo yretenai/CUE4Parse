@@ -91,7 +91,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Texture
 
         public FVirtualTextureBuiltData(FAssetArchive Ar, int firstMip)
         {
-            bool bStripMips = firstMip > 0;
+            bool bStripMips = firstMip > 0; // this is only useful for serializing
             var bCooked = Ar.ReadBoolean();
 
             NumLayers = Ar.Read<uint>();
@@ -102,23 +102,20 @@ namespace CUE4Parse.UE4.Assets.Exports.Texture
             TileBorderSize = Ar.Read<uint>();
             if (Ar.Game >= EGame.GAME_UE5_0) TileDataOffsetPerLayer = Ar.ReadArray<uint>();
 
-            if (!bStripMips)
+            NumMips = Ar.Read<uint>();
+            Width = Ar.Read<uint>();
+            Height = Ar.Read<uint>();
+
+            if (Ar.Game >= EGame.GAME_UE5_0)
             {
-                NumMips = Ar.Read<uint>();
-                Width = Ar.Read<uint>();
-                Height = Ar.Read<uint>();
-
-                if (Ar.Game >= EGame.GAME_UE5_0)
-                {
-                    ChunkIndexPerMip = Ar.ReadArray<uint>();
-                    BaseOffsetPerMip = Ar.ReadArray<uint>();
-                    TileOffsetData = Ar.ReadArray(() => new FVirtualTextureTileOffsetData(Ar));
-                }
-
-                TileIndexPerChunk = Ar.ReadArray<uint>();
-                TileIndexPerMip = Ar.ReadArray<uint>();
-                TileOffsetInChunk = Ar.ReadArray<uint>();
+                ChunkIndexPerMip = Ar.ReadArray<uint>();
+                BaseOffsetPerMip = Ar.ReadArray<uint>();
+                TileOffsetData = Ar.ReadArray(() => new FVirtualTextureTileOffsetData(Ar));
             }
+
+            TileIndexPerChunk = Ar.ReadArray<uint>();
+            TileIndexPerMip = Ar.ReadArray<uint>();
+            TileOffsetInChunk = Ar.ReadArray<uint>();
 
             LayerTypes = Ar.ReadArray((int) NumLayers, () => (EPixelFormat) Enum.Parse(typeof(EPixelFormat), Ar.ReadFString()));
 

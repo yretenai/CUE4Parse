@@ -54,6 +54,7 @@ namespace CUE4Parse_Conversion.Materials
             File.WriteAllText(savedFilePath, JsonConvert.SerializeObject(_materialData, Formatting.Indented));
             label = Path.GetFileName(savedFilePath);
 
+            /*
             Parallel.ForEach(_materialData.Parameters.Textures.Values, texture =>
             {
                 if (texture is not UTexture2D t || t.Decode(Options.Platform) is not { } bitmap) return;
@@ -67,6 +68,7 @@ namespace CUE4Parse_Conversion.Materials
                     stream.CopyTo(fs);
                 }
             });
+            */
 
             return true;
         }

@@ -42,6 +42,12 @@ public record Flags : CommandLineFlags {
     [Flag("no-unknown", Help = "Suppress unknown files from being saved", Category = "Export")]
     public bool NoUnknown { get; set; }
 
+    [Flag("dry", Help = "Only list files", Category = "Export")]
+    public bool Dry { get; set; }
+
+    [Flag("usmap", Help = "Unreal Engine Struct Mappings", Category = "CUE4Parse")]
+    public string? Mappings { get; set; }
+    
     [Flag("aes", Aliases = new[] { "k" }, Help = "AES key values for the packages", Category = "CUE4Parse")]
     public List<string> Keys { get; set; } = new();
 

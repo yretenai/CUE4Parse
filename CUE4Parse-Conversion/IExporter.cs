@@ -94,9 +94,9 @@ namespace CUE4Parse_Conversion
                 UAnimMontage animMontage => new AnimExporter(animMontage, options),
                 UAnimComposite animComposite => new AnimExporter(animComposite, options),
                 UMaterialInterface material => new MaterialExporter2(material, options),
-                USkeletalMesh skeletalMesh => new MeshExporter(skeletalMesh, options),
-                USkeleton skeleton => new MeshExporter(skeleton, options),
-                UStaticMesh staticMesh => new MeshExporter(staticMesh, options),
+                USkeletalMesh skeletalMesh => new MeshExporter(skeletalMesh, options, 0),
+                USkeleton skeleton => new MeshExporter(skeleton, options, 0),
+                UStaticMesh staticMesh => new MeshExporter(staticMesh, options, 0),
                 _ => throw new NotSupportedException($"export of '{export.GetType()}' is not supported yet.")
             };
         }

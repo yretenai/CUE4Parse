@@ -167,8 +167,8 @@ namespace CUE4Parse_Conversion.Meshes
             if (sect.Material?.Load<UMaterialInterface>() is { } tex)
             {
                 materialName = tex.Name;
-                var materialExporter = new MaterialExporter2(tex, options);
-                materialExports?.Add(materialExporter);
+                // var materialExporter = new MaterialExporter2(tex, options);
+                // materialExports?.Add(materialExporter);
             }
             else materialName = $"material_{index}";
 
@@ -202,8 +202,8 @@ namespace CUE4Parse_Conversion.Meshes
             if (sect.Material?.Load<UMaterialInterface>() is { } tex)
             {
                 materialName = tex.Name;
-                var materialExporter = new MaterialExporter2(tex, options);
-                materialExports?.Add(materialExporter);
+                // var materialExporter = new MaterialExporter2(tex, options);
+                // materialExports?.Add(materialExporter);
             }
             else materialName = $"material_{index}";
 
