@@ -24,6 +24,7 @@ using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Sounds;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Worlds;
+using CUE4Parse.GameTypes.OS.Assets.Exports;
 using CUE4Parse.MappingsProvider;
 using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.VirtualFileSystem;
@@ -53,6 +54,7 @@ public static class Program {
             .CreateLogger();
 
         using var Provider = new DefaultFileProvider(Path.GetFullPath(flags.PakPath), SearchOption.AllDirectories, false, new VersionContainer(flags.Game, flags.Platform));
+        Provider.UseLazySerialization = false;
         flags.Mappings ??= Directory.GetFiles(flags.PakPath, "*.usmap", SearchOption.AllDirectories).SingleOrDefault();
         if (File.Exists(flags.Mappings)) {
             Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(flags.Mappings);
@@ -285,6 +287,16 @@ public static class Program {
                                                 using var data = texture.Encode(SKEncodedImageFormat.Png, 100);
                                                 await using var stream = data.AsStream();
                                                 await stream.CopyToAsync(fs);
+                                            }
+
+                                            break;
+                                        }
+                                        case AnimatedTexture2D animated2d when !flags.NoTextures: {
+                                            var texture = animated2d.FileBlob;
+                                            if (texture.Length > 0 && animated2d.FileType != AnimatedTextureType.None) {
+                                                targetPath.EnsureDirectoryExists();
+                                                await using var fs = new FileStream(targetPath + $".{exportIndex}.{animated2d.FileType.ToString("G").ToLower()}", FileMode.Create, FileAccess.Write);
+                                                await fs.WriteAsync(texture);
                                             }
 
                                             break;
