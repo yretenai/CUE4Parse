@@ -5,7 +5,7 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseGroupValueCookedData
+public class WwiseGroupValueCookedData : IWwiseDebugName
 {
     public EWwiseGroupType Type { get; set; }
     public int GroupId { get; set; }

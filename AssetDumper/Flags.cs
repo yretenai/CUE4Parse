@@ -15,6 +15,9 @@ public record Flags : CommandLineFlags {
     [Flag("wwise-events", Help = "Keep track of Wwise Events", Category = "Export")]
     public bool WwiseEvents { get; set; }
 
+    [Flag("wwise", Help = "Rename Wwise WEMs if a DebugName is present", Category = "Export")]
+    public bool WwiseRename { get; set; }
+
     [Flag("locres", Help = "Saave localization data", Category = "Export")]
     public bool SaveLocRes { get; set; }
 

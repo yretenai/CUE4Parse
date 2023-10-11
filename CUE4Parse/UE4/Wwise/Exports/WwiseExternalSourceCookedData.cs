@@ -5,7 +5,7 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseExternalSourceCookedData
+public class WwiseExternalSourceCookedData : IWwiseDebugName
 {
     public int Cookie { get; set; }
     public FName DebugName { get; set; }

@@ -5,7 +5,7 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseSoundBankCookedData
+public class WwiseSoundBankCookedData : IWwiseDebugName
 {
     public int SoundBankId { get; set; }
     public FName SoundBankPathName { get; set; }

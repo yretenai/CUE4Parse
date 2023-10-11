@@ -5,7 +5,7 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseMediaCookedData
+public class WwiseMediaCookedData : IWwiseDebugName
 {
     public int MediaId { get; set; }
     public FName MediaPathName { get; set; }
