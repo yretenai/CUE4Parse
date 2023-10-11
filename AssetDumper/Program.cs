@@ -435,7 +435,7 @@ public static class Program {
 
                                             if (flags.WwiseRename) {
                                                 foreach (var media in entry.Media) {
-                                                    wwiseRename[media.MediaPathName.PlainText] = locale.LanguageName.PlainText + "/" + entry.DebugName.PlainText.Replace('\\', '/').Replace(':', '_').Replace("..", "_");
+                                                    wwiseRename[media.MediaPathName.PlainText] = locale.LanguageName.PlainText + "/" + media.DebugName.PlainText.Replace('\\', '/').Replace(':', '_').Replace("..", "_");
                                                 }
                                             }
                                         }
