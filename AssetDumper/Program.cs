@@ -25,6 +25,7 @@ using CUE4Parse_Conversion.Sounds;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Worlds;
 using CUE4Parse.MappingsProvider;
+using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.VirtualFileSystem;
 using DragonLib;
 using DragonLib.CommandLine;
@@ -52,6 +53,7 @@ public static class Program {
             .CreateLogger();
 
         using var Provider = new DefaultFileProvider(Path.GetFullPath(flags.PakPath), SearchOption.AllDirectories, false, new VersionContainer(flags.Game, flags.Platform));
+        flags.Mappings ??= Directory.GetFiles(flags.PakPath, "*.usmap", SearchOption.AllDirectories).SingleOrDefault();
         if (File.Exists(flags.Mappings)) {
             Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(flags.Mappings);
         }
@@ -102,6 +104,8 @@ public static class Program {
         }
 
         await Provider.MountAsync();
+        
+        AbstractUePackage.SkipClasses.UnionWith(flags.SkipClasses);
 
         foreach (var keyGuid in Provider.RequiredKeys) {
             if (!Provider.Keys.ContainsKey(keyGuid)) {
@@ -114,16 +118,28 @@ public static class Program {
         if (flags.SaveLocRes) {
             await File.WriteAllTextAsync(Path.Combine(target, "localization.json"), JsonConvert.SerializeObject(Provider.LocalizedResources, Formatting.Indented));
         }
-
-        var history = new History();
-        var targetHistoryPath = Path.Combine(target, Path.GetFileName(target) + ".history");
-        var oldHistory = new History(flags.HistoryPath ?? targetHistoryPath);
+        
+        if (flags.Dry) {
+            flags.StubHistory = true;
+        }
+        
+        History? history = null;
+        History? oldHistory = null;
+        if (!flags.StubHistory) {
+            history = new History();
+            var targetHistoryPath = Path.Combine(target, Path.GetFileName(target) + ".history");
+            oldHistory = new History(flags.HistoryPath ?? targetHistoryPath);
+        }
 
         var wwiseNames = new HashSet<string>();
 
         var filesEnumerable = Provider.Files.DistinctBy(x => x.Key);
         if (flags.Filters.Any()) {
             filesEnumerable = filesEnumerable.Where(x => flags.Filters.Any(y => y.IsMatch(x.Key)));
+        }
+
+        if (!flags.Raw) {
+            filesEnumerable = filesEnumerable.Where(x => x.Value.Extension is not ("ubulk" or "uexp" or "uptnl"));
         }
 
         var files = filesEnumerable.ToArray();
@@ -145,21 +161,8 @@ public static class Program {
         foreach (var (path, gameFile) in files) {
             var pc = ++processed / count * 100;
 
-            if (flags.Raw) {
-                var data = await gameFile.TryReadAsync();
-                if (data != null) {
-                    var rawPath = Path.Combine(target, "Raw", gameFile.Path);
-                    rawPath.EnsureDirectoryExists();
-                    await File.WriteAllBytesAsync(rawPath, data);
-                }
-            }
-
-            if (gameFile.Extension is "ubulk" or "uexp" or "uptnl") {
-                continue;
-            }
-
             var historyType = History.HistoryType.New;
-            if (!flags.Dry) {
+            if (flags.StubHistory == false && oldHistory != null && history != null) {
                 var historyEntry = await history.Add(Provider, gameFile);
                 historyType = oldHistory.Has(historyEntry);
             }
@@ -169,6 +172,15 @@ public static class Program {
             }
             else {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile}", pc, historyType, gameFile);
+            }
+
+            if (flags.Raw) {
+                var data = await gameFile.TryReadAsync();
+                if (data != null) {
+                    var rawPath = Path.Combine(target, "Raw", gameFile.Path);
+                    rawPath.EnsureDirectoryExists();
+                    await File.WriteAllBytesAsync(rawPath, data);
+                }
             }
 
             if (flags.Dry) {
@@ -361,7 +373,10 @@ public static class Program {
             }
         }
 
-        history.Save(targetHistoryPath);
+        if (!flags.StubHistory && history != null) {
+            var targetHistoryPath = Path.Combine(target, Path.GetFileName(target) + ".history");
+            history.Save(targetHistoryPath);
+        }
 
         if (flags.WwiseEvents) {
             await File.WriteAllTextAsync(Path.Combine(target, "wwnames.txt"), string.Join('\n', wwiseNames));

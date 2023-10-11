@@ -77,12 +77,18 @@ public record Flags : CommandLineFlags {
 
     [Flag("filter", Help = "Path filters", Category = "AssetDumper")]
     public List<Regex> Filters { get; set; } = new();
+    
+    [Flag("skip-class", Aliases = new[] { "e" }, Help = "Classes to skip", Category = "AssetDumper")]
+    public HashSet<string> SkipClasses { get; set; } = new();
 
     [Flag("history-path", Aliases = new[] { "history" }, Help = "Path to the .history file for the previous version", Category = "AssetDumper")]
     public string? HistoryPath { get; set; }
 
     [Flag("history-name", Help = "This history's name", Category = "AssetDumper")]
     public string? HistoryName { get; set; }
+
+    [Flag("stub-history", Help = "Stub history comparison", Category = "AssetDumper")]
+    public bool StubHistory { get; set; }
 
     [Flag("output-path", IsRequired = true, Positional = 1, Help = "Path to where to save files", Category = "AssetDumper")]
     public string OutputPath { get; set; } = null!;

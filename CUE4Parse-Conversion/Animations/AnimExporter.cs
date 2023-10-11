@@ -23,6 +23,11 @@ namespace CUE4Parse_Conversion.Animations
         private AnimExporter(ExporterOptions options, UObject export, CAnimSet animSet, int index = -1)
             : this(export, options)
         {
+            if (animSet.Skeleton == null)
+            {
+                return;
+            }
+            
             if (index == -1)
             {
                 for (int sequenceIndex = 0; sequenceIndex < animSet.Sequences.Count; sequenceIndex++)

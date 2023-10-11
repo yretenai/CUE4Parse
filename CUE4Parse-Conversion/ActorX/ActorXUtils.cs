@@ -17,9 +17,18 @@ namespace CUE4Parse_Conversion.ActorX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Write(this FArchiveWriter Ar, string value, int len)
         {
-            var padded = new byte[len];
-            var bytes = Encoding.UTF8.GetBytes(value);
-            Buffer.BlockCopy(bytes, 0, padded, 0, bytes.Length);
+            if (len == 0)
+            {
+                return;
+            }
+            
+            Span<byte> padded = stackalloc byte[len];
+            if (!string.IsNullOrEmpty(value))
+            {
+                var bytes = Encoding.UTF8.GetBytes(value)[..Math.Min(value.Length, len)].AsSpan();
+                bytes.CopyTo(padded);
+            }
+
             Ar.Write(padded);
         }
     }

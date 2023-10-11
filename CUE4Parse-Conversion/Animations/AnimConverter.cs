@@ -107,6 +107,7 @@ namespace CUE4Parse_Conversion.Animations
         {
             var animSet = skeleton.ConvertToAnimSet();
             if (animSequence == null) return animSet;
+            if (animSet.Skeleton == null) return animSet;
 
             // Store UAnimSequence in 'OriginalAnims' array, we just need it from time to time
             //OriginalAnims.Add(animSequence);

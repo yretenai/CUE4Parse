@@ -17,6 +17,8 @@ namespace CUE4Parse.UE4.Assets
 {
     public abstract class AbstractUePackage : UObject, IPackage
     {
+        public static HashSet<string> SkipClasses = new HashSet<string>();
+        
         public IFileProvider? Provider { get; }
         public TypeMappings? Mappings { get; }
         public abstract FPackageFileSummary Summary { get; }
@@ -64,9 +66,7 @@ namespace CUE4Parse.UE4.Assets
             var validPos = serialOffset + serialSize;
             try
             {
-                if (obj.ExportType == "MovieSceneCompiledData")
-                {
-                    Log.Warning("Skipping MovieSceneCompiledData because it will crash");
+                if(SkipClasses.Contains(obj.ExportType)) {
                     return;
                 }
                 

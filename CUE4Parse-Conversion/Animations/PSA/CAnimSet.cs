@@ -5,12 +5,12 @@ namespace CUE4Parse_Conversion.Animations.PSA
 {
     public class CAnimSet
     {
-        public readonly USkeleton Skeleton;
+        public readonly USkeleton? Skeleton;
         public readonly List<CAnimSequence> Sequences = new();
 
         public float TotalAnimTime;
 
-        public CAnimSet(USkeleton skeleton)
+        public CAnimSet(USkeleton? skeleton)
         {
             Skeleton = skeleton;
         }
