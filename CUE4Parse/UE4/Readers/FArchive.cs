@@ -211,7 +211,7 @@ namespace CUE4Parse.UE4.Readers
             {
                 0 => false,
                 1 => true,
-                _ => throw new ParserException(this, $"Invalid bool value ({i})")
+                _ => throw new ParserException(this, $"Invalid flag value ({i})")
             };
         }
 

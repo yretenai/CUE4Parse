@@ -34,6 +34,12 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
     public abstract class FPropertyTagType
     {
         public abstract object? GenericValue { get; }
+
+        public T? GetValue<T>() where T : class
+        {
+            return GetValue(typeof(T)) as T;
+        }
+        
         public object? GetValue(Type type)
         {
             var generic = GenericValue;
@@ -59,6 +65,18 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
                     return result;
                 }
                 case FPropertyTagType<UScriptArray> arrayProp when typeof(IList).IsAssignableFrom(type):
+                {
+                    var array = arrayProp.Value.Properties;
+                    var contentType = type.GenericTypeArguments[0];
+                    var listType = typeof(List<>).MakeGenericType(contentType);
+                    var result = (IList) Activator.CreateInstance(listType, array.Count)!;
+                    foreach (var element in array)
+                    {
+                        result.Add(element.GetValue(contentType));
+                    }
+                    return result;
+                }
+                case FPropertyTagType<UScriptSet> arrayProp when typeof(IList).IsAssignableFrom(type):
                 {
                     var array = arrayProp.Value.Properties;
                     var contentType = type.GenericTypeArguments[0];

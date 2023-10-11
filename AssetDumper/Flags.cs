@@ -47,6 +47,9 @@ public record Flags : CommandLineFlags {
 
     [Flag("usmap", Help = "Unreal Engine Struct Mappings", Category = "CUE4Parse")]
     public string? Mappings { get; set; }
+
+    [Flag("debug-usmap", Help = "Dump Unreal Engine Struct Mappings to a dummy file", Category = "CUE4Parse")]
+    public bool DebugMappings { get; set; }
     
     [Flag("aes", Aliases = new[] { "k" }, Help = "AES key values for the packages", Category = "CUE4Parse")]
     public List<string> Keys { get; set; } = new();

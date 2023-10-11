@@ -28,6 +28,7 @@ using CUE4Parse.GameTypes.OS.Assets.Exports;
 using CUE4Parse.MappingsProvider;
 using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.VirtualFileSystem;
+using CUE4Parse.UE4.Wwise.Exports;
 using DragonLib;
 using DragonLib.CommandLine;
 using Newtonsoft.Json;
@@ -58,6 +59,11 @@ public static class Program {
         flags.Mappings ??= Directory.GetFiles(flags.PakPath, "*.usmap", SearchOption.AllDirectories).SingleOrDefault();
         if (File.Exists(flags.Mappings)) {
             Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(flags.Mappings);
+        }
+
+        if (flags.DebugMappings && Provider.MappingsContainer is not null) {
+            await using var mappingsDump = new StreamWriter(Path.Combine(target, "Mappings.cs"));
+            Provider.MappingsContainer.MappingsForGame.DumpDummyClasses(mappingsDump);
         }
 
         Provider.Initialize();
@@ -275,6 +281,26 @@ public static class Program {
                                 var export = exports[exportIndex];
                                 if (export.ExportType == "AkAudioEvent") {
                                     wwiseNames.Add(export.Name);
+
+                                    if (export is AkAudioEvent akAudioEvent) {
+                                        foreach (var (_, entry) in akAudioEvent.EventCookedData.EventLanguageMap) {
+                                            foreach (var media in entry.Media) {
+                                                wwiseNames.Add(media.DebugName.PlainText);
+                                            }
+                                            
+                                            foreach (var source in entry.ExternalSources) {
+                                                wwiseNames.Add(source.DebugName.PlainText);
+                                            }
+                                            
+                                            foreach (var leaf in entry.SwitchContainerLeaves.SelectMany(x => x.Media)) {
+                                                wwiseNames.Add(leaf.DebugName.PlainText);
+                                            }
+                                            
+                                            foreach (var leaf in entry.SwitchContainerLeaves.SelectMany(x => x.ExternalSources)) {
+                                                wwiseNames.Add(leaf.DebugName.PlainText);
+                                            }
+                                        }
+                                    }
                                 }
 
                                 try {
