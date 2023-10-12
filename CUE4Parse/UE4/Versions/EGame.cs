@@ -8,13 +8,17 @@ namespace CUE4Parse.UE4.Versions {
         // ue_major ue_minor ue_game  ue_game
         // X = Bit flag for if it's an official branch.
         // very unlikely that versions will ever go over 255, but more likely that games go over 255 given enough time.
-        // i.e. GAME_StarWarsJediSurvivor = 0x41a0007 = 0x4, 0x1a, 0x7 = UE4.26 Game 7
         // written format: MAJOR.MINOR.GAME
         // max: 255.255.32767
         // special versions:
         //      4.25.32768 = 4.25.plus = Plus PS5/XSX support
         //      4.27.32768 = 4.27.plus = Plus Ray Tracing support
         //      5.0.32768 = 5.0.16678002 = Pre-IoStore Refactor
+        //
+        // old GAME_StarWarsJediSurvivor = 0x10001a7 = 0x1, 0x1a, 0x7 = UE4.26 Game 7
+        // new GAME_StarWarsJediSurvivor = 0x41a0007 = 0x4, 0x1a, 0b0, 0x7 = UE4.26 Game 7, Flag 0
+        // old GAME_UE4_25_Plus = 0x1000191 = 0x1, 0x19, 0x1 = UE4.25 Game 1
+        // new GAME_UE4_25_Plus = 0x4198000 = 0x4, 0x19, 0b1, 0x0 = UE4.25 Game 0, Flag 1
         GAME_UE4_0 = 4 << 24,
         GAME_UE4_1 = GAME_UE4_0 + (1 << 16),
         GAME_UE4_2 = GAME_UE4_0 + (2 << 16),
