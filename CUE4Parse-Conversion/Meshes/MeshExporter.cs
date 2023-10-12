@@ -12,6 +12,7 @@ using CUE4Parse.UE4.Writers;
 using CUE4Parse_Conversion.ActorX;
 using CUE4Parse_Conversion.Materials;
 using CUE4Parse_Conversion.Meshes.PSK;
+using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
@@ -53,24 +54,41 @@ namespace CUE4Parse_Conversion.Meshes
                 return;
             }
 
-            var i = -1;
-            foreach (var lod in convertedMesh.LODs)
+            var morphs = CollectMorphs(originalMesh);
+            var morphLods = new List<List<KeyValuePair<string, FMorphTargetLODModel>>>();
+            foreach (var morph in morphs)
             {
-                i++;
-                if (lod.SkipLod)
+                if (morph.MorphLODModels == null)
                 {
-                    Log.Logger.Warning($"LOD {i} in mesh '{ExportName}' should be skipped");
+                    continue;
+                }
+
+                for (var index = 0; index < morph.MorphLODModels.Length; index++)
+                {
+                    var morphLod = morph.MorphLODModels[index];
+                    if (morphLods.Count <= index)
+                    {
+                        morphLods.Add(new List<KeyValuePair<string, FMorphTargetLODModel>>());
+                    }
+
+                    morphLods[index].Add(new KeyValuePair<string, FMorphTargetLODModel>(morph.Name, morphLod));
+                }
+            }
+
+            for (var lodIndex = 0; lodIndex < convertedMesh.LODs.Count; lodIndex++) {
+                var lod = convertedMesh.LODs[lodIndex];
+                if (lod.SkipLod) {
+                    Log.Logger.Warning($"LOD {lodIndex} in mesh '{ExportName}' should be skipped");
                     continue;
                 }
 
                 using var Ar = new FArchiveWriter();
                 var materialExports = options.ExportMaterials ? new List<MaterialExporter2>() : null;
                 string ext;
-                switch (Options.MeshFormat)
-                {
+                switch (Options.MeshFormat) {
                     case EMeshFormat.ActorX:
                         ext = "pskx";
-                        ExportStaticMeshLods(lod, Ar, materialExports, originalMesh.Sockets);
+                        ExportStaticMeshLods(lod, morphLods.ElementAtOrDefault(lodIndex), Ar, materialExports, originalMesh.Sockets);
                         break;
                     case EMeshFormat.Gltf2:
                         ext = "glb";
@@ -83,19 +101,16 @@ namespace CUE4Parse_Conversion.Meshes
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Options.MeshFormat), Options.MeshFormat, null);
                 }
-                
-                if (Options.LodFormat == ELodFormat.FirstLod)
-                {
+
+                if (Options.LodFormat == ELodFormat.FirstLod) {
                     MeshLods.Add(new Mesh($"{PackagePath}.{exportIndex}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
                     break;
-                }
-                else
-                {
-                    MeshLods.Add(new Mesh($"{PackagePath}_LOD{i}.{exportIndex}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
+                } else {
+                    MeshLods.Add(new Mesh($"{PackagePath}_LOD{lodIndex}.{exportIndex}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
                 }
             }
         }
-        private List<UMorphTarget> CollectMorphs(USkeletalMesh mesh)
+        private List<UMorphTarget> CollectMorphs(UObject mesh)
         {
             var morphProperties = mesh.GetOrDefault<UScriptArray>("MorphTargets");
             var morphs = new List<UMorphTarget>();
@@ -138,7 +153,7 @@ namespace CUE4Parse_Conversion.Meshes
             }
 
             var i = 0;
-            
+
             var morphs = CollectMorphs(originalMesh);
             var morphLods = new List<List<KeyValuePair<string, FMorphTargetLODModel>>>();
             foreach (var morph in morphs)
@@ -159,7 +174,7 @@ namespace CUE4Parse_Conversion.Meshes
                     morphLods[index].Add(new KeyValuePair<string, FMorphTargetLODModel>(morph.Name, morphLod));
                 }
             }
-            
+
             for (var lodIndex = 0; lodIndex < convertedMesh.LODs.Count; lodIndex++)
             {
                 var lod = convertedMesh.LODs[lodIndex];
@@ -206,74 +221,47 @@ namespace CUE4Parse_Conversion.Meshes
             }
         }
 
-        private void ExportStaticMeshLods(CStaticMeshLod lod, FArchiveWriter Ar, List<MaterialExporter2>? materialExports, FPackageIndex[] sockets)
+        private void ExportStaticMeshLods(CStaticMeshLod lod, List<KeyValuePair<string, FMorphTargetLODModel>>? morphs, FArchiveWriter Ar, List<MaterialExporter2>? materialExports, FPackageIndex[] sockets)
         {
-            var share = new CVertexShare();
-            var boneHdr = new VChunkHeader();
-            var infHdr = new VChunkHeader();
-
-            share.Prepare(lod.Verts);
-            foreach (var vert in lod.Verts)
-            {
-                share.AddVertex(vert.Position, vert.Normal);
-            }
-
-            ExportCommonMeshData(Ar, lod.Sections.Value, lod.Verts, lod.Indices.Value, share, materialExports);
+            ExportCommonMeshData(Ar, lod.Sections.Value, lod.Verts, lod.Indices.Value, materialExports);
 
             var bones = new List<CSkelMeshBone>();
             ExportStaticSockets(Ar, sockets, bones);
             ExportSkeletonData(Ar, bones);
-
-            infHdr.DataCount = 0;
-            infHdr.DataSize = 12;
-            Ar.SerializeChunkHeader(infHdr, "RAWWEIGHTS");
-
             ExportVertexColors(Ar, lod.VertexColors, lod.NumVerts);
             ExportExtraUV(Ar, lod.ExtraUV.Value, lod.NumVerts, lod.NumTexCoords);
+            ExportMorphDataAda(Ar, morphs, lod.Verts);
         }
 
         private void ExportSkeletalMeshLod(CSkelMeshLod lod, List<CSkelMeshBone> bones,  List<KeyValuePair<string, FMorphTargetLODModel>>? morphs, FArchiveWriter Ar, List<MaterialExporter2>? materialExports, FPackageIndex[]? morphTargets, FPackageIndex[] sockets, int lodIndex)
         {
-            var share = new CVertexShare();
             var infHdr = new VChunkHeader();
 
-            share.Prepare(lod.Verts);
-            foreach (var vert in lod.Verts)
-            {
-                var weightsHash = vert.PackedWeights;
-                for (var i = 0; i < vert.Bone.Length; i++)
-                {
-                    weightsHash ^= (uint) vert.Bone[i] << i;
-                }
-
-                share.AddVertex(vert.Position, vert.Normal, weightsHash);
-            }
-
-            ExportCommonMeshData(Ar, lod.Sections.Value, lod.Verts, lod.Indices.Value, share, materialExports);
+            ExportCommonMeshData(Ar, lod.Sections.Value, lod.Verts, lod.Indices.Value, materialExports);
             ExportSkeletalSockets(Ar, sockets, bones);
             ExportSkeletonData(Ar, bones);
 
             var numInfluences = 0;
-            for (var i = 0; i < share.Points.Count; i++)
-            {
-                for (var j = 0; j < Constants.NUM_INFLUENCES_UE4; j++)
-                {
-                    if (lod.Verts[share.VertToWedge.Value[i]].Bone[j] < 0)
+            for (var i = 0; i < lod.NumVerts; i++) {
+                for (var j = 0; j < Constants.NUM_INFLUENCES_UE4; j++) {
+                    if (lod.Verts[i].Bone![j] < 0)
                         break;
+
                     numInfluences++;
                 }
             }
+
             infHdr.DataCount = numInfluences;
             infHdr.DataSize = 12;
             Ar.SerializeChunkHeader(infHdr, "RAWWEIGHTS");
-            for (var i = 0; i < share.Points.Count; i++)
+            for (var i = 0; i < lod.NumVerts; i++)
             {
-                var v = lod.Verts[share.VertToWedge.Value[i]];
+                var v = lod.Verts[i];
                 var unpackedWeights = v.UnpackWeights();
 
                 for (var j = 0; j < Constants.NUM_INFLUENCES_UE4; j++)
                 {
-                    if (v.Bone[j] < 0)
+                    if (v.Bone![j] < 0)
                         break;
 
                     Ar.Write(unpackedWeights[j]);
@@ -288,7 +276,7 @@ namespace CUE4Parse_Conversion.Meshes
         }
 
         private void ExportCommonMeshData(FArchiveWriter Ar, CMeshSection[] sections, CMeshVertex[] verts,
-            FRawStaticIndexBuffer indices, CVertexShare share, List<MaterialExporter2>? materialExports)
+            FRawStaticIndexBuffer indices, List<MaterialExporter2>? materialExports)
         {
             var mainHdr = new VChunkHeader();
             var ptsHdr = new VChunkHeader();
@@ -479,24 +467,24 @@ namespace CUE4Parse_Conversion.Meshes
                 }
             }
         }
-        
-        private void ExportMorphDataAda(FArchiveWriter Ar, List<KeyValuePair<string, FMorphTargetLODModel>>? morphs, CSkelMeshVertex[] verts)
+
+        private void ExportMorphDataAda(FArchiveWriter Ar, List<KeyValuePair<string, FMorphTargetLODModel>>? morphs, CMeshVertex[] verts)
         {
             if (morphs == null)
             {
                 return;
             }
-            
+
             var targetIndex = 0;
             var morphNames = new List<string>(morphs.Count);
-            
+
             foreach (var (morphName, morphLod) in morphs)
             {
                 var mrphHdr = new VChunkHeader {
                     DataSize = 16,
                     DataCount = morphLod.Vertices.Length
                 };
-                
+
                 Ar.SerializeChunkHeader(mrphHdr, $"MORPHTARGET{targetIndex++}");
                 morphNames.Add(morphName);
 
@@ -514,58 +502,11 @@ namespace CUE4Parse_Conversion.Meshes
                 DataSize = 64,
                 DataCount = morphNames.Count
             };
-            
+
             Ar.SerializeChunkHeader(morphNameHeader, "MORPHNAMES");
             foreach (var morphName in morphNames)
             {
                 Ar.Write(morphName, 64);
-            }
-        }
-
-        public void ExportMorphTargets(FArchiveWriter Ar, CSkelMeshLod lod, CVertexShare share, FPackageIndex[]? morphTargets, int lodIndex)
-        {
-            if (morphTargets == null) return;
-
-            var morphInfoHdr = new VChunkHeader { DataCount = morphTargets.Length, DataSize = 64 + sizeof(int) };
-            Ar.SerializeChunkHeader(morphInfoHdr, "MRPHINFO");
-
-            var morphDeltas = new List<VMorphData>();
-            for (var i = 0; i < morphTargets.Length; i++)
-            {
-                var morphTarget = morphTargets[i].Load<UMorphTarget>();
-                if (morphTarget?.MorphLODModels == null || morphTarget.MorphLODModels.Length <= lodIndex)
-                    continue;
-
-                var morphModel = morphTarget.MorphLODModels[lodIndex];
-                var morphVertCount = 0;
-                var localMorphDeltas = new List<VMorphData>();
-                for (var j = 0; j < morphModel.Vertices.Length; j++)
-                {
-                    var delta = morphModel.Vertices[j];
-                    if (delta.SourceIdx >= lod.Verts.Length) continue;
-                    
-                    var vertex = lod.Verts[delta.SourceIdx];
-
-                    var index = FindVertex(vertex.Position, share.Points);
-                    if (index == -1) continue;
-                    if (localMorphDeltas.Any(x => x.PointIdx == index)) continue;
-
-                    var morphData = new VMorphData(delta.PositionDelta, delta.TangentZDelta, index);
-                    localMorphDeltas.Add(morphData);
-                    morphVertCount++;
-                }
-
-                morphDeltas.AddRange(localMorphDeltas);
-
-                var morphInfo = new VMorphInfo(morphTarget.Name, morphVertCount);
-                morphInfo.Serialize(Ar);
-            }
-
-            var morphDataHdr = new VChunkHeader { DataCount = morphDeltas.Count, DataSize = Constants.VMorphData_SIZE };
-            Ar.SerializeChunkHeader(morphDataHdr, "MRPHDATA");
-            foreach (var delta in morphDeltas)
-            {
-                delta.Serialize(Ar);
             }
         }
 
