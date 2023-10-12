@@ -8,6 +8,21 @@ namespace CUE4Parse_Conversion.Animations;
 public class AnimExporterV2 : AnimExporter {
     public AnimExporterV2(UAnimSequence animSequence, ExporterOptions options, int exportIndex) : base(animSequence, options, exportIndex) { }
 
+
+    private static void FixRotationKeys(CAnimSequence anim)
+    {
+        for (var trackIndex = 0; trackIndex < anim.Tracks.Count; trackIndex++)
+        {
+            if (trackIndex == 0) continue; // don't fix root track
+
+            var track = anim.Tracks[trackIndex];
+            for (var keyQuatIndex = 0; keyQuatIndex < track.KeyQuat.Length; keyQuatIndex++)
+            {
+                track.KeyQuat[keyQuatIndex].Conjugate();
+            }
+        }
+    }
+
     protected override void DoExportPsa(CAnimSet anim, int seqIdx) {
         var Ar = new FArchiveWriter();
 
@@ -50,14 +65,16 @@ public class AnimExporterV2 : AnimExporter {
             var sequence = anim.Sequences[i];
             Ar.Write(sequence.Name, 64);
             Ar.Write(sequence.FramesPerSecond);
-            Ar.Write(sequence.IsAdditive);
+            Ar.Write(sequence.IsAdditive ? 1 : 0);
         }
 
         for (i = 0; i < numAnims; i++) {
             var sequence = anim.Sequences[i];
+            FixRotationKeys(sequence);
 
             for (var boneIndex = 0; boneIndex < numBones; boneIndex++) {
                 var posTrackHdr = new VChunkHeader();
+                var sclTrackHdr = new VChunkHeader();
                 var rotTrackHdr = new VChunkHeader();
                 var track = sequence.Tracks[boneIndex];
 
@@ -69,6 +86,14 @@ public class AnimExporterV2 : AnimExporter {
                     var pos = track.KeyPos[j];
                     pos.Y *= -1;
                     pos.Serialize(Ar);
+                }
+
+                sclTrackHdr.DataSize = 16; // float, FVector
+                sclTrackHdr.DataCount = track.KeyScale.Length;
+                Ar.SerializeChunkHeader(sclTrackHdr, $"SCLTRACK{i}:{boneIndex}");
+                for (var j = 0; j < track.KeyScale.Length; ++j) {
+                    Ar.Write(track.KeyScaleTime.Length == 0 ? j : track.KeyScaleTime[j]);
+                    track.KeyScale[j].Serialize(Ar);
                 }
 
                 rotTrackHdr.DataSize = 20; // float, FQuat
