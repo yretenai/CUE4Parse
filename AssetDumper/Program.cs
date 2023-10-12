@@ -12,6 +12,7 @@ using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Sounds;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Worlds;
+using CUE4Parse.Compression;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
 using CUE4Parse.GameTypes.OS.Assets.Exports;
@@ -46,6 +47,8 @@ public static class Program {
         if (flags == null) {
             return;
         }
+
+        Oodle.Load(Environment.CurrentDirectory);
 
         var target = Path.GetFullPath(flags.OutputPath);
         var targetBaseDir = new DirectoryInfo(target);

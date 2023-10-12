@@ -56,7 +56,7 @@ namespace CUE4Parse.UE4.VirtualFileSystem
             if (mountPoint[0] != '/' || ( (mountPoint.Length > 1) && (mountPoint[1] == '.') ))
                 badMountPoint = true;
 
-            if (badMountPoint)
+            if (badMountPoint && mountPoint != "/")
             {
                 if (Globals.LogVfsMounts)
                 {
@@ -93,8 +93,7 @@ namespace CUE4Parse.UE4.VirtualFileSystem
             return reader.Read<byte>() == 0;
         }
 
-        public abstract void Dispose();
-
         public override string ToString() => Path;
+        public abstract void Dispose();
     }
 }
