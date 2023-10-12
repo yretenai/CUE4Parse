@@ -127,6 +127,9 @@ namespace CUE4Parse.UE4.Versions {
     }
 
     public static class GameUtils {
+        public const int GameUe4Base = (int) EGame.GAME_UE4_0;
+        public const int GameUe5Base = (int) EGame.GAME_UE5_0;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GAME_UE4(int x) {
             return (int)(EGame.GAME_UE4_0 + (x << 16));
@@ -135,6 +138,11 @@ namespace CUE4Parse.UE4.Versions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GAME_UE5(int x) {
             return (int)(EGame.GAME_UE5_0 + (x << 16));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GAME(int ueVer, int revVer) {
+            return (ueVer << 24) + (revVer << 16);
         }
 
         public static EValorantGame GetValorantVersion(this EGame game) {
