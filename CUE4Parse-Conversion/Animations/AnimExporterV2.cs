@@ -7,21 +7,9 @@ namespace CUE4Parse_Conversion.Animations;
 
 public class AnimExporterV2 : AnimExporter {
     public AnimExporterV2(UAnimSequence animSequence, ExporterOptions options, int exportIndex) : base(animSequence, options, exportIndex) { }
+    public AnimExporterV2(UAnimMontage animMontage, ExporterOptions options, int exportIndex) : base(animMontage, options, exportIndex) { }
+    public AnimExporterV2(UAnimComposite animComposite, ExporterOptions options, int exportIndex) : base(animComposite, options, exportIndex) { }
 
-
-    private static void FixRotationKeys(CAnimSequence anim)
-    {
-        for (var trackIndex = 0; trackIndex < anim.Tracks.Count; trackIndex++)
-        {
-            if (trackIndex == 0) continue; // don't fix root track
-
-            var track = anim.Tracks[trackIndex];
-            for (var keyQuatIndex = 0; keyQuatIndex < track.KeyQuat.Length; keyQuatIndex++)
-            {
-                track.KeyQuat[keyQuatIndex].Conjugate();
-            }
-        }
-    }
 
     protected override void DoExportPsa(CAnimSet anim, int seqIdx) {
         var Ar = new FArchiveWriter();
@@ -70,7 +58,6 @@ public class AnimExporterV2 : AnimExporter {
 
         for (i = 0; i < numAnims; i++) {
             var sequence = anim.Sequences[i];
-            FixRotationKeys(sequence);
 
             for (var boneIndex = 0; boneIndex < numBones; boneIndex++) {
                 var posTrackHdr = new VChunkHeader();
@@ -103,7 +90,7 @@ public class AnimExporterV2 : AnimExporter {
                     Ar.Write(track.KeyQuatTime.Length == 0 ? j : track.KeyQuatTime[j]);
                     var rot = track.KeyQuat[j];
                     rot.Y *= -1;
-                    rot.W *= -1;
+                    if (boneIndex == 0) rot.W *= -1;
                     rot.Serialize(Ar);
                 }
             }

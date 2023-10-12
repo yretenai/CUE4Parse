@@ -491,6 +491,30 @@ public static class Program {
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
+                                        case UAnimMontage animMontage when !flags.NoAnimations: {
+                                            target.EnsureDirectoryExists();
+
+                                            var exporter = flags.AnimationFormat switch {
+                                                EAnimFormat.ActorX => new AnimExporterV2(animMontage, exportOptions, exportIndex),
+                                                EAnimFormat.LegacyActorX => new AnimExporter(animMontage, exportOptions, exportIndex),
+                                                _ => throw new ArgumentOutOfRangeException(),
+                                            };
+
+                                            exporter.TryWriteToDir(targetBaseDir, out _, out _);
+                                            break;
+                                        }
+                                        case UAnimComposite animComposite when !flags.NoAnimations: {
+                                            target.EnsureDirectoryExists();
+
+                                            var exporter = flags.AnimationFormat switch {
+                                                EAnimFormat.ActorX => new AnimExporterV2(animComposite, exportOptions, exportIndex),
+                                                EAnimFormat.LegacyActorX => new AnimExporter(animComposite, exportOptions, exportIndex),
+                                                _ => throw new ArgumentOutOfRangeException(),
+                                            };
+
+                                            exporter.TryWriteToDir(targetBaseDir, out _, out _);
+                                            break;
+                                        }
                                         case UMaterialInstanceConstant materialInterface when !flags.NoMaterial: {
                                             target.EnsureDirectoryExists();
                                             var exporter = new MaterialExporter2(materialInterface, exportOptions);
