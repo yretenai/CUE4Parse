@@ -8,35 +8,26 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseLocalizedEventCookedData : UObject, IWwiseDebugName
-{
-    public Dictionary<WwiseLanguageCookedData, WwiseEventCookedData> EventLanguageMap { get; init; } = new();
-    public FName DebugName { get; set; }
-    public int EventId { get; set; }
+public class WwiseLocalizedEventCookedData : UObject, IWwiseDebugName {
+    public WwiseLocalizedEventCookedData() { }
 
-    public WwiseLocalizedEventCookedData() : base()
-    {
-        
-    }
-    
-    public WwiseLocalizedEventCookedData(FStructFallback fallback) : base()
-    {
+    public WwiseLocalizedEventCookedData(FStructFallback fallback) {
         LoadFromProperties(fallback);
     }
 
-    public override void Deserialize(FAssetArchive Ar, long validPos)
-    {
+    public Dictionary<WwiseLanguageCookedData, WwiseEventCookedData> EventLanguageMap { get; init; } = new();
+    public int EventId { get; set; }
+    public FName DebugName { get; set; }
+
+    public override void Deserialize(FAssetArchive Ar, long validPos) {
         base.Deserialize(Ar, validPos);
         LoadFromProperties(this);
     }
 
-    private void LoadFromProperties(IPropertyHolder holder)
-    {
+    private void LoadFromProperties(IPropertyHolder holder) {
         var eventLanguageMap = PropertyUtil.GetOrDefault<UScriptMap>(holder, nameof(EventLanguageMap));
-        foreach (var (key, value) in eventLanguageMap.Properties)
-        {
-            if (value == null)
-            {
+        foreach (var (key, value) in eventLanguageMap.Properties) {
+            if (value == null) {
                 continue;
             }
 

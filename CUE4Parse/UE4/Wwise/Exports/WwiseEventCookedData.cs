@@ -6,23 +6,10 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseEventCookedData : IWwiseDebugName
-{
-    public int EventId { get; set; }
-    public List<WwiseSoundBankCookedData> SoundBanks { get; init; } = new();
-    public List<WwiseMediaCookedData> Media { get; init; } = new();
-    public List<WwiseExternalSourceCookedData> ExternalSources { get; init; } = new();
-    public List<WwiseSwitchContainerLeafCookedData> SwitchContainerLeaves { get; init; } = new();
-    public List<WwiseGroupValueCookedData> RequiredGroupValueSet { get; init; } = new();
-    public EWwiseEventDestroyOptions DestroyOptions { get; set; }
-    public FName DebugName { get; set; }
+public class WwiseEventCookedData : IWwiseDebugName {
+    public WwiseEventCookedData() { }
 
-    public WwiseEventCookedData()
-    {
-    }
-
-    public WwiseEventCookedData(FStructFallback fallback)
-    {
+    public WwiseEventCookedData(FStructFallback fallback) {
         EventId = fallback.GetOrDefault<int>(nameof(EventId));
         SoundBanks = fallback.GetOrDefault(nameof(SoundBanks), SoundBanks);
         Media = fallback.GetOrDefault(nameof(Media), Media);
@@ -32,4 +19,13 @@ public class WwiseEventCookedData : IWwiseDebugName
         DestroyOptions = fallback.GetOrDefault<EWwiseEventDestroyOptions>(nameof(DestroyOptions));
         DebugName = fallback.GetOrDefault<FName>(nameof(DebugName));
     }
+
+    public int EventId { get; set; }
+    public List<WwiseSoundBankCookedData> SoundBanks { get; init; } = new();
+    public List<WwiseMediaCookedData> Media { get; init; } = new();
+    public List<WwiseExternalSourceCookedData> ExternalSources { get; init; } = new();
+    public List<WwiseSwitchContainerLeafCookedData> SwitchContainerLeaves { get; init; } = new();
+    public List<WwiseGroupValueCookedData> RequiredGroupValueSet { get; init; } = new();
+    public EWwiseEventDestroyOptions DestroyOptions { get; set; }
+    public FName DebugName { get; set; }
 }

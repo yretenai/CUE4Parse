@@ -1,7 +1,6 @@
 ﻿namespace CUE4Parse.UE4.Wwise.Exports;
 
-public enum EWwiseEventDestroyOptions
-{
+public enum EWwiseEventDestroyOptions {
     StopEventOnDestroy,
-    WaitForEventEnd
+    WaitForEventEnd,
 }

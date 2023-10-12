@@ -1,12 +1,11 @@
 ﻿using System;
+using CUE4Parse_Conversion.ActorX;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Writers;
-using CUE4Parse_Conversion.ActorX;
 
 namespace CUE4Parse_Conversion.Worlds.PSW;
 
-public class WorldLandscape
-{
+public class WorldLandscape {
     public int ActorId;
     public FVector4 Scale;
     public string? Path;
@@ -16,7 +15,7 @@ public class WorldLandscape
     public int DimX;
     public int DimY;
     public int Type; // 0 = height, 1+ weightmaps.
-    
+
     public float[] Heightmap = Array.Empty<float>();
     public int OrigX;
     public int OrigY;

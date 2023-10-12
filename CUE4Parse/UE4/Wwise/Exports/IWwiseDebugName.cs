@@ -2,7 +2,6 @@
 
 namespace CUE4Parse.UE4.Wwise.Exports;
 
-public interface IWwiseDebugName
-{
+public interface IWwiseDebugName {
     public FName DebugName { get; set; }
 }

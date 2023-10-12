@@ -1,14 +1,14 @@
-﻿using CUE4Parse.UE4.Assets.Exports.Animation;
-using CUE4Parse.UE4.Writers;
-using CUE4Parse_Conversion.ActorX;
+﻿using CUE4Parse_Conversion.ActorX;
 using CUE4Parse_Conversion.Animations.PSA;
+using CUE4Parse.UE4.Assets.Exports.Animation;
+using CUE4Parse.UE4.Writers;
 
 namespace CUE4Parse_Conversion.Animations;
 
-public class AnimExporterV2 : AnimExporter
-{
-    protected override void DoExportPsa(CAnimSet anim, int seqIdx)
-    {
+public class AnimExporterV2 : AnimExporter {
+    public AnimExporterV2(UAnimSequence animSequence, ExporterOptions options, int exportIndex) : base(animSequence, options, exportIndex) { }
+
+    protected override void DoExportPsa(CAnimSet anim, int seqIdx) {
         var Ar = new FArchiveWriter();
 
         var mainHdr = new VChunkHeader();
@@ -24,45 +24,39 @@ public class AnimExporterV2 : AnimExporter
         boneHdr.DataCount = numBones;
         boneHdr.DataSize = Constants.FNamedBoneBinary_SIZE;
         Ar.SerializeChunkHeader(boneHdr, "BONENAMES");
-        for (i = 0; i < numBones; i++)
-        {
+        for (i = 0; i < numBones; i++) {
             var boneInfo = anim.Skeleton.ReferenceSkeleton.FinalRefBoneInfo[i];
             var boneTransform = anim.Skeleton.ReferenceSkeleton.FinalRefBonePose[i];
-            var bone = new FNamedBoneBinary
-            {
+            var bone = new FNamedBoneBinary {
                 Name = boneInfo.Name.Text,
                 Flags = 0, // reserved
                 NumChildren = 0, // unknown here
                 ParentIndex = boneInfo.ParentIndex, // unknown for UAnimSet?? edit 2023: no
-                BonePos =
-                {
+                BonePos = {
                     Orientation = boneTransform.Rotation,
                     Position = boneTransform.Translation,
                     Size = boneTransform.Scale3D,
-                    Length = 1.0f
-                }
+                    Length = 1.0f,
+                },
             };
-            
+
             bone.Serialize(Ar);
         }
 
         sequenceHdr.DataCount = numAnims;
         sequenceHdr.DataSize = 72;
         Ar.SerializeChunkHeader(sequenceHdr, "SEQUENCES");
-        for (i = 0; i < numAnims; i++)
-        {
+        for (i = 0; i < numAnims; i++) {
             var sequence = anim.Sequences[i];
             Ar.Write(sequence.Name, 64);
             Ar.Write(sequence.FramesPerSecond);
             Ar.Write(sequence.IsAdditive);
         }
 
-        for (i = 0; i < numAnims; i++)
-        {
+        for (i = 0; i < numAnims; i++) {
             var sequence = anim.Sequences[i];
 
-            for (var boneIndex = 0; boneIndex < numBones; boneIndex++)
-            {
+            for (var boneIndex = 0; boneIndex < numBones; boneIndex++) {
                 var posTrackHdr = new VChunkHeader();
                 var rotTrackHdr = new VChunkHeader();
                 var track = sequence.Tracks[boneIndex];
@@ -70,8 +64,7 @@ public class AnimExporterV2 : AnimExporter
                 posTrackHdr.DataSize = 16; // float, FVector
                 posTrackHdr.DataCount = track.KeyPos.Length;
                 Ar.SerializeChunkHeader(posTrackHdr, $"POSTRACK{i}:{boneIndex}");
-                for (var j = 0; j < track.KeyPos.Length; ++j)
-                {
+                for (var j = 0; j < track.KeyPos.Length; ++j) {
                     Ar.Write(track.KeyPosTime.Length == 0 ? j : track.KeyPosTime[j]);
                     var pos = track.KeyPos[j];
                     pos.Y *= -1;
@@ -81,8 +74,7 @@ public class AnimExporterV2 : AnimExporter
                 rotTrackHdr.DataSize = 20; // float, FQuat
                 rotTrackHdr.DataCount = track.KeyQuat.Length;
                 Ar.SerializeChunkHeader(rotTrackHdr, $"ROTTRACK{i}:{boneIndex}");
-                for (var j = 0; j < track.KeyQuat.Length; ++j)
-                {
+                for (var j = 0; j < track.KeyQuat.Length; ++j) {
                     Ar.Write(track.KeyQuatTime.Length == 0 ? j : track.KeyQuatTime[j]);
                     var rot = track.KeyQuat[j];
                     rot.Y *= -1;
@@ -94,9 +86,5 @@ public class AnimExporterV2 : AnimExporter
 
         AnimSequences.Add(new Anim($"{PackagePath}_SEQ{seqIdx}.psax", Ar.GetBuffer()));
         Ar.Dispose();
-    }
-    
-    public AnimExporterV2(UAnimSequence animSequence, ExporterOptions options, int exportIndex) : base(animSequence, options, exportIndex)
-    {
     }
 }

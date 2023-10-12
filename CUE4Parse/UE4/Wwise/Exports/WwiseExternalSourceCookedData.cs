@@ -5,18 +5,14 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseExternalSourceCookedData : IWwiseDebugName
-{
-    public int Cookie { get; set; }
-    public FName DebugName { get; set; }
+public class WwiseExternalSourceCookedData : IWwiseDebugName {
+    public WwiseExternalSourceCookedData() { }
 
-    public WwiseExternalSourceCookedData()
-    {
-    }
-
-    public WwiseExternalSourceCookedData(FStructFallback fallback)
-    {
+    public WwiseExternalSourceCookedData(FStructFallback fallback) {
         Cookie = fallback.GetOrDefault<int>(nameof(Cookie));
         DebugName = fallback.GetOrDefault<FName>(nameof(DebugName));
     }
+
+    public int Cookie { get; set; }
+    public FName DebugName { get; set; }
 }

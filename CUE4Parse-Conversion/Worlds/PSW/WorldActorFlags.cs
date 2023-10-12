@@ -3,8 +3,7 @@
 namespace CUE4Parse_Conversion.Worlds.PSW;
 
 [Flags]
-public enum WorldActorFlags : uint
-{
+public enum WorldActorFlags : uint {
     NoCastShadow = 0b1,
-    Hidden = 0b10
+    Hidden = 0b10,
 }

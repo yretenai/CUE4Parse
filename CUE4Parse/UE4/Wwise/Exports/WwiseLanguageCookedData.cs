@@ -5,20 +5,16 @@ using CUE4Parse.UE4.Objects.UObject;
 namespace CUE4Parse.UE4.Wwise.Exports;
 
 [StructFallback]
-public class WwiseLanguageCookedData
-{
-    public int LanguageId { get; set; }
-    public FName LanguageName { get; set; }
-    public EWwiseLanguageRequirement LanguageRequirement { get; set; }
+public class WwiseLanguageCookedData {
+    public WwiseLanguageCookedData() { }
 
-    public WwiseLanguageCookedData()
-    {
-    }
-
-    public WwiseLanguageCookedData(FStructFallback fallback)
-    {
+    public WwiseLanguageCookedData(FStructFallback fallback) {
         LanguageId = fallback.GetOrDefault<int>(nameof(LanguageId));
         LanguageName = fallback.GetOrDefault<FName>(nameof(LanguageName));
         LanguageRequirement = fallback.GetOrDefault<EWwiseLanguageRequirement>(nameof(LanguageRequirement));
     }
+
+    public int LanguageId { get; set; }
+    public FName LanguageName { get; set; }
+    public EWwiseLanguageRequirement LanguageRequirement { get; set; }
 }

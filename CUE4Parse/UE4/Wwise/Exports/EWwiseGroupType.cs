@@ -1,8 +1,7 @@
 ﻿namespace CUE4Parse.UE4.Wwise.Exports;
 
-public enum EWwiseGroupType
-{
+public enum EWwiseGroupType {
     Switch,
     State,
-    Unknown
+    Unknown,
 }
