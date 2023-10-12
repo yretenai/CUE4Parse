@@ -46,7 +46,7 @@ namespace CUE4Parse.ACL
 
         public TracksHeader GetTracksHeader() => Marshal.PtrToStructure<TracksHeader>(Handle + Marshal.SizeOf<RawBufferHeader>());
 
-        [DllImport(LIB_NAME)]
+        [DllImport(LIB_NAME), DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         private static extern IntPtr nCompressedTracks_IsValid(IntPtr handle, bool checkHash);
     }
 }

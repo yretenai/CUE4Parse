@@ -5,6 +5,7 @@ using CUE4Parse.UE4.Assets.Exports;
 
 namespace CUE4Parse.UE4.Assets
 {
+    [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class)]
     public sealed class SkipObjectRegistrationAttribute : Attribute { }
 
     public static class ObjectTypeRegistry
@@ -66,7 +67,7 @@ namespace CUE4Parse.UE4.Assets
                 return type;
             }
         }
-        
+
         public static Type? Get(string serializedName)
         {
             return GetClass(serializedName);

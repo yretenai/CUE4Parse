@@ -597,7 +597,7 @@ namespace CUE4Parse_Conversion.Animations
             }
         }
 
-        [DllImport(ACLNative.LIB_NAME)]
+        [DllImport(ACLNative.LIB_NAME), DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         private static extern unsafe void nReadACLData(IntPtr compressedTracks, FVector* outPosKeys, FQuat* outRotKeys, FVector* outScaleKeys);
     }
 }

@@ -1,19 +1,11 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 
 namespace CUE4Parse_Conversion.Textures.BC
 {
     public static class Detex
     {
-        static Detex()
-        {
-            PrepareDllFile();
-        }
+        // todo: use AMD compressonator instead-- CUE4Parse-Native for cross-platform
 
         [StructLayout(LayoutKind.Sequential)]
         private unsafe struct detexTexture
@@ -54,42 +46,8 @@ namespace CUE4Parse_Conversion.Textures.BC
             }
         }
 
-        [DllImport(Constants.DETEX_DLL_NAME)]
+        [DllImport(Constants.DETEX_DLL_NAME), DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
         private static extern unsafe bool detexDecompressTextureLinear(detexTexture* texture, byte* pixelBuffer,
             uint pixelFormat);
-
-        private static void PrepareDllFile()
-        {
-            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CUE4Parse_Conversion.Resources.Detex.dll");
-            if (stream == null)
-                throw new MissingManifestResourceException("Couldn't find Detex.dll in Embedded Resources");
-            var ba = new byte[(int)stream.Length];
-            stream.Read(ba, 0, (int)stream.Length);
-
-            bool fileOk;
-            var dllFile = Constants.DETEX_DLL_NAME;
-
-            using (var sha1 = new SHA1CryptoServiceProvider())
-            {
-                var fileHash = BitConverter.ToString(sha1.ComputeHash(ba)).Replace("-", string.Empty);
-
-                if (File.Exists(dllFile))
-                {
-                    var bb = File.ReadAllBytes(dllFile);
-                    var fileHash2 = BitConverter.ToString(sha1.ComputeHash(bb)).Replace("-", string.Empty);
-
-                    fileOk = fileHash == fileHash2;
-                }
-                else
-                {
-                    fileOk = false;
-                }
-            }
-
-            if (!fileOk)
-            {
-                File.WriteAllBytes(dllFile, ba);
-            }
-        }
     }
 }

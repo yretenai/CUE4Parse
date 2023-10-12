@@ -1,127 +1,125 @@
 ﻿using CUE4Parse.UE4.Exceptions;
 using CUE4Parse.UE4.Readers;
-using CUE4Parse.Utils;
-
 using Serilog;
-
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
-namespace CUE4Parse.Compression
-{
-    public class OodleException : ParserException
-    {
-        public OodleException(string? message = null, Exception? innerException = null) : base(message, innerException) { }
+namespace CUE4Parse.Compression {
+    [Serializable]
+    public class OodleException : ParserException {
         public OodleException(FArchive reader, string? message = null, Exception? innerException = null) : base(reader, message, innerException) { }
+        public OodleException(string? message, Exception? innerException) : base(message, innerException) { }
+        public OodleException(string message) : base(message) { }
+        public OodleException() : base("Oodle decompression failed") {  }
     }
 
-    public static class Oodle
-    {
-        public unsafe delegate long OodleDecompress(byte* bufferPtr, long bufferSize, byte* outputPtr, long outputSize, int a, int b, int c, long d, long e, long f, long g, long h, long i, int threadModule);
+    public static class Oodle {
+        public static IEnumerable<string> OodleLibName {
+            get {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    yield return "oo2core*win64.dll";
+                    yield break;
+                }
 
-        private const string WARFRAME_CDN_HOST = "https://origin.warframe.com";
-        private const string WARFRAME_INDEX_PATH = "/origin/E926E926/index.txt.lzma";
-        private static string WARFRAME_INDEX_URL => WARFRAME_CDN_HOST + WARFRAME_INDEX_PATH;
-        public const string OODLE_DLL_NAME = "oo2core_9_win64.dll";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                    if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
+                        yield return "oo2core*linuxarm64.so";
+                    } else {
+                        yield return "oo2core*linux64.so";
+                    }
+                    yield break;
+                }
 
-        public static OodleDecompress DecompressFunc;
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
+                        yield return "oo2core*macarm64.dylib";
+                    }
 
-        static unsafe Oodle()
-        {
-            DecompressFunc = OodleLZ_Decompress;
+                    yield return "oo2core*mac64.dylib";
+                }
+
+                throw new PlatformNotSupportedException();
+            }
         }
 
-        public static bool LoadOodleDll(string? path = null)
-        {
-            if (File.Exists(OODLE_DLL_NAME)) return true;
-            return DownloadOodleDll(path).GetAwaiter().GetResult();
-        }
+        public static bool IsReady => DecompressDelegate != null;
+        public static OodleLZ_Decompress? DecompressDelegate { get; set; }
 
-        public static unsafe void Decompress(byte[] compressed, int compressedOffset, int compressedSize,
-                                             byte[] uncompressed, int uncompressedOffset, int uncompressedSize, FArchive? reader = null)
-        {
-            if (DecompressFunc == OodleLZ_Decompress)
-                LoadOodleDll();
+        public static bool Load(string? path) {
+            if (Directory.Exists(path) && new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory)) {
+                foreach (var oodleLibName in OodleLibName) {
+                    var files = Directory.GetFiles(path, oodleLibName, SearchOption.TopDirectoryOnly);
+                    if (files.Length == 0) {
+                        continue;
+                    }
 
-            long decodedSize;
-
-            fixed (byte* compressedPtr = compressed, uncompressedPtr = uncompressed)
-            {
-                decodedSize = DecompressFunc(compressedPtr + compressedOffset, compressedSize,
-                                             uncompressedPtr + uncompressedOffset, uncompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3);
+                    path = files[0];
+                    break;
+                }
             }
 
-            if (decodedSize <= 0)
-            {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) {
+                return false;
+            }
+
+            var handle = NativeLibrary.Load(path);
+            if (handle == IntPtr.Zero) {
+                return false;
+            }
+
+            var address = NativeLibrary.GetExport(handle, nameof(OodleLZ_Decompress));
+            if (address == IntPtr.Zero) {
+                return false;
+            }
+
+            DecompressDelegate = Marshal.GetDelegateForFunctionPointer<OodleLZ_Decompress>(address);
+            return true;
+        }
+
+        public static unsafe void Decompress(Memory<byte> input, int inputOffset, int inputSize,
+                                             Memory<byte> output, int outputOffset, int outputSize, FArchive? reader = null) {
+            if (DecompressDelegate == null) {
+                if (reader != null) throw new OodleException(reader, "Oodle library not loaded");
+
+                throw new OodleException("Oodle library not loaded");
+            }
+
+            var inputSlice = input.Slice(inputOffset, inputSize);
+            var outputSlice = output.Slice(outputOffset, outputSize);
+            using var inPin = inputSlice.Pin();
+            using var outPin = outputSlice.Pin();
+
+            var decodedSize = DecompressDelegate(inPin.Pointer, inputSlice.Length, outPin.Pointer, outputSlice.Length);
+
+            if (decodedSize <= 0) {
                 if (reader != null) throw new OodleException(reader, $"Oodle decompression failed with result {decodedSize}");
+
                 throw new OodleException($"Oodle decompression failed with result {decodedSize}");
             }
 
-            if (decodedSize < uncompressedSize)
-            {
+            if (decodedSize < outputSize) {
                 // Not sure whether this should be an exception or not
-                Log.Warning("Oodle decompression just decompressed {0} bytes of the expected {1} bytes", decodedSize, uncompressedSize);
+                Log.Warning("Oodle decompression just decompressed {0} bytes of the expected {1} bytes", decodedSize, outputSize);
             }
         }
 
-        [DllImport(OODLE_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern long OodleLZ_Decompress(byte[] buffer, long bufferSize, byte[] output, long outputBufferSize, int a, int b, int c, long d, long e, long f, long g, long h, long i, int threadModule);
-        [DllImport(OODLE_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern unsafe long OodleLZ_Decompress(byte* buffer, long bufferSize, byte* output, long outputBufferSize, int a, int b, int c, long d, long e, long f, long g, long h, long i, int threadModule);
-
-        public static async Task<bool> DownloadOodleDll(string? path)
-        {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            try
-            {
-                using var indexResponse = await client.GetAsync(WARFRAME_INDEX_URL).ConfigureAwait(false);
-                await using var indexLzmaStream = await indexResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                await using var indexStream = new MemoryStream();
-
-                Lzma.Decompress(indexLzmaStream, indexStream);
-                indexStream.Position = 0;
-
-                string? dllUrl = null;
-                using var indexReader = new StreamReader(indexStream);
-                while (!indexReader.EndOfStream)
-                {
-                    var line = await indexReader.ReadLineAsync().ConfigureAwait(false);
-                    if (string.IsNullOrEmpty(line)) continue;
-
-                    if (line.Contains(OODLE_DLL_NAME))
-                    {
-                        dllUrl = WARFRAME_CDN_HOST + line[..line.IndexOf(',')];
-                        break;
-                    }
-                }
-
-                if (dllUrl == null)
-                {
-                    Log.Warning("Warframe index did not contain oodle dll");
-                    return false;
-                }
-
-                using var dllResponse = await client.GetAsync(dllUrl).ConfigureAwait(false);
-                await using var dllLzmaStream = await dllResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                await using var dllStream = new MemoryStream();
-
-                Lzma.Decompress(dllLzmaStream, dllStream);
-                dllStream.Position = 0;
-                var dllPath = path ?? OODLE_DLL_NAME;
-                var dllFs = File.Create(dllPath);
-                await dllStream.CopyToAsync(dllFs).ConfigureAwait(false);
-                await dllFs.DisposeAsync().ConfigureAwait(false);
-                Log.Information($"Successfully downloaded oodle dll at \"{dllPath}\"");
-                return true;
-            }
-            catch (Exception e)
-            {
-                Log.Warning(e, "Uncaught exception while downloading oodle dll");
-            }
-            return false;
+        public enum OodleLZ_Decode_ThreadPhase {
+            ThreadPhase1 = 1,
+            ThreadPhase2 = 2,
+            ThreadPhaseAll = 3,
+            Unthreaded = ThreadPhaseAll,
         }
+
+        public enum OodleLZ_Verbosity {
+            None = 0,
+            Minimal = 1,
+            Some = 2,
+            Lots = 3,
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public unsafe delegate int OodleLZ_Decompress(void* srcBuf, int srcSize, void* rawBuf, int rawSize, int fuzzSafe = 1, int checkCRC = 0, OodleLZ_Verbosity verbosity = OodleLZ_Verbosity.None, void* decBufBase = null, int decBufSize = 0, void* fpCallback = null, void* callbackUserData = null, void* decoderMemory = null, int decoderMemorySize = 0, OodleLZ_Decode_ThreadPhase threadPhase = OodleLZ_Decode_ThreadPhase.Unthreaded);
     }
 }

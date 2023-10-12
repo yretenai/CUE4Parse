@@ -1,64 +1,23 @@
 using System;
-using System.IO;
-using System.Reflection;
-using System.Resources;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 
 namespace CUE4Parse_Conversion.Textures;
 
 public static class PlatformDeswizzlers
 {
-    static PlatformDeswizzlers()
-    {
-        PrepareDllFile();
-    }
-
-    [DllImport("tegra_swizzle_x64", EntryPoint = "deswizzle_block_linear")]
+    // https://github.com/ScanMountGoat/tegra_swizzle/, cargo build --release --features=ffi, copy the .dll,.so,.dylib to the same folder as the executable
+    [DllImport("tegra_swizzle", EntryPoint = "deswizzle_block_linear"), DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern unsafe void DeswizzleBlockLinearX64(ulong width, ulong height, ulong depth, byte* source, ulong sourceLength, byte[] destination, ulong destinationLength, ulong blockHeight, ulong bytesPerPixel);
 
-    [DllImport("tegra_swizzle_x64", EntryPoint = "swizzled_surface_size")]
+    [DllImport("tegra_swizzle", EntryPoint = "swizzled_surface_size"), DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern ulong GetSurfaceSizeX64(ulong width, ulong height, ulong depth, ulong blockHeight, ulong bytesPerPixel);
 
-    [DllImport("tegra_swizzle_x64", EntryPoint = "block_height_mip0")]
+    [DllImport("tegra_swizzle", EntryPoint = "block_height_mip0"), DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern ulong BlockHeightMip0X64(ulong height);
 
-    [DllImport("tegra_swizzle_x64", EntryPoint = "mip_block_height")]
+    [DllImport("tegra_swizzle", EntryPoint = "mip_block_height"), DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern ulong MipBlockHeightX64(ulong mipHeight, ulong blockHeightMip0);
-
-    private static void PrepareDllFile()
-    {
-        using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CUE4Parse_Conversion.Resources.tegra_swizzle_x64.dll");
-        if (stream == null)
-            throw new MissingManifestResourceException("Couldn't find tegra_swizzle_x64.dll in Embedded Resources");
-        var ba = new byte[(int) stream.Length];
-        stream.Read(ba, 0, (int) stream.Length);
-
-        bool fileOk;
-
-        using (var sha1 = SHA1.Create())
-        {
-            var fileHash = BitConverter.ToString(sha1.ComputeHash(ba)).Replace("-", string.Empty);
-
-            if (File.Exists("tegra_swizzle_x64.dll"))
-            {
-                var bb = File.ReadAllBytes("tegra_swizzle_x64.dll");
-                var fileHash2 = BitConverter.ToString(sha1.ComputeHash(bb)).Replace("-", string.Empty);
-
-                fileOk = fileHash == fileHash2;
-            }
-            else
-            {
-                fileOk = false;
-            }
-        }
-
-        if (!fileOk)
-        {
-            File.WriteAllBytes("tegra_swizzle_x64.dll", ba);
-        }
-    }
 
     public static byte[] GetDeswizzledData(byte[] data, FTexture2DMipMap mip, FPixelFormatInfo formatInfo)
     {
