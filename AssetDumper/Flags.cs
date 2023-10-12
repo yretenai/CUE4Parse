@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using CUE4Parse.UE4.Assets.Exports.Texture;
-using CUE4Parse.UE4.Versions;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Textures;
+using CUE4Parse.UE4.Assets.Exports.Texture;
+using CUE4Parse.UE4.Versions;
 using DragonLib.CommandLine;
 
 namespace AssetDumper;
@@ -53,7 +53,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("debug-usmap", Help = "Dump Unreal Engine Struct Mappings to a dummy file", Category = "CUE4Parse")]
     public bool DebugMappings { get; set; }
-    
+
     [Flag("aes", Aliases = new[] { "k" }, Help = "AES key values for the packages", Category = "CUE4Parse")]
     public List<string> Keys { get; set; } = new();
 
@@ -83,7 +83,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("filter", Help = "Path filters", Category = "AssetDumper")]
     public List<Regex> Filters { get; set; } = new();
-    
+
     [Flag("skip-class", Aliases = new[] { "e" }, Help = "Classes to skip", Category = "AssetDumper")]
     public HashSet<string> SkipClasses { get; set; } = new();
 

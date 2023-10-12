@@ -6,8 +6,17 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CUE4Parse_Conversion;
+using CUE4Parse_Conversion.Animations;
+using CUE4Parse_Conversion.Materials;
+using CUE4Parse_Conversion.Meshes;
+using CUE4Parse_Conversion.Sounds;
+using CUE4Parse_Conversion.Textures;
+using CUE4Parse_Conversion.Worlds;
 using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
+using CUE4Parse.GameTypes.OS.Assets.Exports;
+using CUE4Parse.MappingsProvider;
+using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
@@ -20,15 +29,6 @@ using CUE4Parse.UE4.Objects.Core.Misc;
 using CUE4Parse.UE4.Objects.Engine;
 using CUE4Parse.UE4.Shaders;
 using CUE4Parse.UE4.Versions;
-using CUE4Parse_Conversion.Animations;
-using CUE4Parse_Conversion.Materials;
-using CUE4Parse_Conversion.Meshes;
-using CUE4Parse_Conversion.Sounds;
-using CUE4Parse_Conversion.Textures;
-using CUE4Parse_Conversion.Worlds;
-using CUE4Parse.GameTypes.OS.Assets.Exports;
-using CUE4Parse.MappingsProvider;
-using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.UE4.Wwise.Exports;
 using DragonLib;
@@ -59,7 +59,9 @@ public static class Program {
             if (!Directory.Exists(flags.PakPath)) {
                 while (!assetDumperReader.EndOfStream) {
                     var line = await assetDumperReader.ReadLineAsync();
-                    if (line is null) continue;
+                    if (line is null) {
+                        continue;
+                    }
 
                     var parts = line.Split(':', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
@@ -149,8 +151,6 @@ public static class Program {
                                 }
                             }
                         }
-
-                        continue;
                     }
                 }
             }
@@ -198,7 +198,9 @@ public static class Program {
             if (remain.Any()) {
                 var foundKeys = new Dictionary<FGuid, FAesKey>();
                 foreach (var reader in Provider.UnloadedVfs) {
-                    if (foundKeys.ContainsKey(reader.EncryptionKeyGuid)) continue;
+                    if (foundKeys.ContainsKey(reader.EncryptionKeyGuid)) {
+                        continue;
+                    }
 
                     foreach (var key in keys) {
                         if (reader.TestAesKey(key)) {
@@ -300,8 +302,7 @@ public static class Program {
 
             if (gameFile is VfsEntry vfs) {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile} from {Source}", pc, historyType, gameFile, vfs.Vfs.Name);
-            }
-            else {
+            } else {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile}", pc, historyType, gameFile);
             }
 
@@ -397,8 +398,7 @@ public static class Program {
                                     targetJsonPath.EnsureDirectoryExists();
                                     try {
                                         await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(exports, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii }));
-                                    }
-                                    catch (Exception e) {
+                                    } catch (Exception e) {
                                         Log.Error(e, "Failed to convert UObject exports to JSON");
                                     }
                                 }
@@ -531,21 +531,18 @@ public static class Program {
                                             break;
                                         }
                                     }
-                                }
-                                catch (Exception e) {
+                                } catch (Exception e) {
                                     Log.Error(e, "Failed to convert UObject export #{Export}", exportIndex);
                                 }
                             }
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             Log.Error(e, "Failed to process file");
                         }
 
                         break;
                     }
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.Error(e, "Unknown error");
             }
         }

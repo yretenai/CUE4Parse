@@ -397,5 +397,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 *.idea
-oo2core*
-AssetDumper/*.dll
+*.dll
+*.so
+*.dylib
