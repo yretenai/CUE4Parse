@@ -16,17 +16,22 @@ namespace CUE4Parse.UE4.Objects.Meshes
         {
             Stride = Ar.Read<int>();
             NumVertices = Ar.Read<int>();
-            if (Ar.Game == EGame.GAME_Valorant)
-            {
-                bool bUseFullPrecisionPositions = Ar.ReadBoolean();
-                _ = new FBoxSphereBounds(Ar);
-                if (!bUseFullPrecisionPositions)
-                {
-                    var vertsHalf = Ar.ReadBulkArray<FVector4Half>();
-                    Verts = new FVector[vertsHalf.Length];
-                    for (int i = 0; i < vertsHalf.Length; i++)
-                        Verts[i] = vertsHalf[i]; // W appears to be all zeros (alignment?), simply dropping
-                    return;
+            if (Ar.Game == EGame.GAME_Valorant) {
+                var valorantVersion = Ar.Game.GetValorantVersion();
+
+                if (valorantVersion >= EValorantGame.EP4) {
+                    var bUseFullPrecisionPositions = Ar.ReadBoolean();
+                    if (valorantVersion >= EValorantGame.EP6) {
+                        _ = new FBoxSphereBounds(Ar);
+                    }
+
+                    if (!bUseFullPrecisionPositions) {
+                        var vertsHalf = Ar.ReadBulkArray<FVector4Half>();
+                        Verts = new FVector[vertsHalf.Length];
+                        for (var i = 0; i < vertsHalf.Length; i++)
+                            Verts[i] = vertsHalf[i]; // W appears to be all zeros (alignment?), simply dropping
+                        return;
+                    }
                 }
             }
             if (Ar.Game == EGame.GAME_Gollum) Ar.Position += 25;
