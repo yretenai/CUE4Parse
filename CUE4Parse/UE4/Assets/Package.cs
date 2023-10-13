@@ -212,6 +212,10 @@ namespace CUE4Parse.UE4.Assets
                 {
                     return new ResolvedLoadedObject(Provider.LoadObject("/Engine/Plugins/ACLPlugin/Content/ACLAnimBoneCompressionSettings"));
                 }
+                if (outerMostImport.ObjectName.Text == "/ACLPlugin/ACLAnimCurveCompressionSettings")
+                {
+                    return new ResolvedLoadedObject(Provider.LoadObject("/Engine/Plugins/ACLPlugin/Content/ACLAnimCurveCompressionSettings"));
+                }
 #if DEBUG
                 Log.Error("Missing native package ({0}) for import of {1} in {2}.", outerMostImport.ObjectName, import.ObjectName, Name);
 #endif
