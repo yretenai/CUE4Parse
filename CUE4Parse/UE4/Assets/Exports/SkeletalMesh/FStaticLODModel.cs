@@ -273,6 +273,10 @@ namespace CUE4Parse.UE4.Assets.Exports.SkeletalMesh
                         var profileNames = Ar.ReadArray(Ar.ReadFName);
                     }
                 }
+            } else {
+                Sections = Array.Empty<FSkelMeshSection>();
+                ActiveBoneIndices = Array.Empty<short>();
+                RequiredBones = Array.Empty<short>();
             }
 
             if (Ar.Game == EGame.GAME_ReadyOrNot)
