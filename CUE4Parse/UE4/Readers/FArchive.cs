@@ -295,6 +295,10 @@ namespace CUE4Parse.UE4.Readers
                 unsafe
                 {
                     length = -length;
+                    if (length > Length - Position) {
+                        throw new ParserException(this, $"Struct is corrupted. FString length ({length}) is bigger than remaining data ({Length - Position})");
+                    }
+
                     var ucs2Length = length * sizeof(ushort);
                     var ucs2Bytes = ucs2Length <= 1024 ? stackalloc byte[ucs2Length] : new byte[ucs2Length];
                     fixed (byte* ucs2BytesPtr = ucs2Bytes)
@@ -313,6 +317,10 @@ namespace CUE4Parse.UE4.Readers
 
             unsafe
             {
+                if (length > Length - Position) {
+                    throw new ParserException(this, $"Struct is corrupted. FString length ({length}) is bigger than remaining data ({Length - Position})");
+                }
+
                 var ansiBytes = length <= 1024 ? stackalloc byte[length] : new byte[length];
                 fixed (byte* ansiBytesPtr = ansiBytes)
                 {

@@ -2,6 +2,7 @@
 using CUE4Parse.UE4.Exceptions;
 using System.Collections.Generic;
 using CUE4Parse.UE4.Assets.Objects.Properties;
+using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 
 namespace CUE4Parse.UE4.Assets.Objects
@@ -25,6 +26,16 @@ namespace CUE4Parse.UE4.Assets.Objects
             {
                 if (!string.IsNullOrEmpty(mapStructTypes.Key)) tagData.InnerTypeData = new FPropertyTagData(mapStructTypes.Key);
                 if (!string.IsNullOrEmpty(mapStructTypes.Value)) tagData.ValueTypeData = new FPropertyTagData(mapStructTypes.Value);
+            }
+
+            if (tagData.InnerTypeData == null || tagData.ValueTypeData == null) {
+                if (Ar.Game.GetValorantVersion() is not EValorantGame.NotValorant) {
+                    if (tagData.Name == "EnumToChatStringMap") {
+                        tagData.InnerTypeData = new FPropertyTagData("EnumProperty") {
+                            EnumName = "NonVerbalCommTypesEnum",
+                        };
+                    }
+                }
             }
 
             var numKeysToRemove = Ar.Read<int>();
