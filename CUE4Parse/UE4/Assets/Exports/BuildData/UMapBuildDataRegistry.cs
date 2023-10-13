@@ -294,7 +294,7 @@ namespace CUE4Parse.UE4.Assets.Exports.BuildData
                 BrickData.SkyBentNormal = new FVolumetricLightmapDataLayer(Ar);
                 BrickData.DirectionalLightShadowing = new FVolumetricLightmapDataLayer(Ar);
 
-                if (FMobileObjectVersion.Get(Ar) >= FMobileObjectVersion.Type.LQVolumetricLightmapLayers)
+                if (FMobileObjectVersion.Get(Ar) >= FMobileObjectVersion.Type.LQVolumetricLightmapLayers && FUE5MainStreamObjectVersion.Get(Ar) < FUE5MainStreamObjectVersion.Type.MobileStationaryLocalLights)
                 {
                     BrickData.LQLightColor = new FVolumetricLightmapDataLayer(Ar);
                     BrickData.LQLightDirection = new FVolumetricLightmapDataLayer(Ar);
