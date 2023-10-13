@@ -10,19 +10,25 @@ namespace AssetDumper;
 
 public record Flags : CommandLineFlags {
     [Flag("raw", Help = "Dump raw uasset files", Category = "Export")]
-    public bool Raw { get; set; }
+    public bool SaveRaw { get; set; }
 
     [Flag("wwise-events", Help = "Keep track of Wwise Events", Category = "Export")]
-    public bool WwiseEvents { get; set; }
+    public bool TrackWwiseEvents { get; set; }
 
     [Flag("wwise", Help = "Rename Wwise WEMs if a DebugName is present", Category = "Export")]
-    public bool WwiseRename { get; set; }
+    public bool RenameWwiseAudio { get; set; }
 
     [Flag("locres", Help = "Saave localization data", Category = "Export")]
     public bool SaveLocRes { get; set; }
 
     [Flag("no-json", Help = "Suppress JSON generation", Category = "Export")]
     public bool NoJSON { get; set; }
+
+    [Flag("no-datatable", Help = "Suppress DataTable conversion", Category = "Export")]
+    public bool NoDataTable { get; set; }
+
+    [Flag("no-stringtable", Help = "Suppress StringTable conversion", Category = "Export")]
+    public bool NoStringTable { get; set; }
 
     [Flag("no-materials", Help = "Suppress Material conversion", Category = "Export")]
     public bool NoMaterial { get; set; }
@@ -52,7 +58,7 @@ public record Flags : CommandLineFlags {
     public string? Mappings { get; set; }
 
     [Flag("debug-usmap", Help = "Dump Unreal Engine Struct Mappings to a dummy file", Category = "CUE4Parse")]
-    public bool DebugMappings { get; set; }
+    public bool DumpMappings { get; set; }
 
     [Flag("aes", Aliases = new[] { "k", "key", "keys" }, Help = "AES key values for the packages", Category = "CUE4Parse")]
     public List<string> Keys { get; set; } = new();
@@ -74,6 +80,9 @@ public record Flags : CommandLineFlags {
 
     [Flag("anim-format", Help = "Animation format to export to", Category = "CUE4Parse")]
     public EAnimFormat AnimationFormat { get; set; } = EAnimFormat.ActorX;
+
+    [Flag("socket-format", Help = "Socket format to use", Category = "CUE4Parse")]
+    public ESocketFormat SocketFormat { get; set; } = ESocketFormat.Socket;
 
     [Flag("platform", Help = "Platform of the game", Category = "CUE4Parse")]
     public ETexturePlatform Platform { get; set; } = ETexturePlatform.DesktopMobile;

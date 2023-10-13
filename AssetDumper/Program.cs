@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CUE4Parse_Conversion;
 using CUE4Parse_Conversion.Animations;
@@ -19,6 +19,8 @@ using CUE4Parse.GameTypes.OS.Assets.Exports;
 using CUE4Parse.MappingsProvider;
 using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports.Animation;
+using CUE4Parse.UE4.Assets.Exports.Engine;
+using CUE4Parse.UE4.Assets.Exports.Internationalization;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Sound;
@@ -35,6 +37,7 @@ using CUE4Parse.UE4.Wwise.Exports;
 using DragonLib;
 using DragonLib.CommandLine;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Serilog;
 using Serilog.Events;
 using SkiaSharp;
@@ -42,6 +45,7 @@ using SkiaSharp;
 namespace AssetDumper;
 
 public static class Program {
+    [SuppressMessage("ReSharper.DPA", "DPA0001: Memory allocation issues")]
     public static async Task Main() {
         var flags = CommandLineFlagsParser.ParseFlags<Flags>();
         if (flags == null) {
@@ -60,115 +64,41 @@ public static class Program {
             using var assetDumperReader = new StreamReader(assetDumperStream, Encoding.UTF8, leaveOpen: true);
 
             if (!Directory.Exists(flags.PakPath)) {
-                while (!assetDumperReader.EndOfStream) {
-                    var line = await assetDumperReader.ReadLineAsync();
-                    if (line is null) {
-                        continue;
-                    }
-
-                    var parts = line.Split(':', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-
-                    if (parts.Length < 2) {
-                        continue;
-                    }
-
-                    if (parts[0] == "path") {
-                        flags.PakPath = parts[1];
-                        continue;
-                    }
-
-                    if (parts[0] == "game") {
-                        flags.Game = Enum.Parse<EGame>(parts[1]);
-                        continue;
-                    }
-
-                    if (parts[0] == "mappings") {
-                        flags.Mappings = parts[1];
-                    }
-
-                    if (parts[0] == "flags") {
-                        var enabled = parts[1].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-
-                        flags.NoJSON = !enabled.Contains("json", StringComparer.InvariantCultureIgnoreCase);
-                        flags.NoMaterial = !enabled.Contains("material", StringComparer.InvariantCultureIgnoreCase);
-                        flags.NoTextures = !enabled.Contains("textures", StringComparer.InvariantCultureIgnoreCase);
-                        flags.NoSounds = !enabled.Contains("sounds", StringComparer.InvariantCultureIgnoreCase);
-                        flags.NoMeshes = !enabled.Contains("meshes", StringComparer.InvariantCultureIgnoreCase);
-                        flags.NoWorlds = !enabled.Contains("worlds", StringComparer.InvariantCultureIgnoreCase);
-                        flags.NoAnimations = !enabled.Contains("animations", StringComparer.InvariantCultureIgnoreCase);
-                        flags.NoUnknown = !enabled.Contains("unknown", StringComparer.InvariantCultureIgnoreCase);
-                        flags.WwiseEvents = enabled.Contains("wwnames", StringComparer.InvariantCultureIgnoreCase);
-                        flags.WwiseRename = enabled.Contains("wwise", StringComparer.InvariantCultureIgnoreCase);
-                        flags.SaveLocRes = enabled.Contains("locres", StringComparer.InvariantCultureIgnoreCase);
-                        flags.Raw = enabled.Contains("raw", StringComparer.InvariantCultureIgnoreCase);
-                        flags.DebugMappings = enabled.Contains("debug-mappings", StringComparer.InvariantCultureIgnoreCase);
-                        continue;
-                    }
-
-                    if (parts[0] == "keys") {
-                        var keys = parts[1].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                        flags.Keys = keys.Where(x => x.Trim().Length >= 32).ToList();
-                        continue;
-                    }
-
-                    if (parts[0] == "keyguids") {
-                        var keys = parts[1].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                        flags.KeyGuids = keys.Where(x => x.Trim().Length >= 32).ToList();
-                        continue;
-                    }
-
-                    if (parts[0] == "filters") {
-                        var filters = parts[1].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var filter in filters) {
-                            flags.Filters.Add(new Regex(filter, RegexOptions.Compiled | RegexOptions.IgnoreCase));
-                        }
-
-                        continue;
-                    }
-
-                    if (parts[0] == "skip") {
-                        var skip = parts[1].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var skipClass in skip) {
-                            flags.SkipClasses.Add(skipClass);
-                        }
-
-                        continue;
-                    }
-
-                    if (parts[0] == "format") {
-                        var formats = parts[1].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-
-                        flags.LodFormat = Enum.Parse<ELodFormat>(formats[0]);
-                        if (formats.Length > 1) {
-                            flags.MeshFormat = Enum.Parse<EMeshFormat>(formats[1]);
-                            if (formats.Length > 2) {
-                                flags.TextureFormat = Enum.Parse<ETextureFormat>(formats[2]);
-                                if (formats.Length > 3) {
-                                    flags.Platform = Enum.Parse<ETexturePlatform>(formats[3]);
-                                    if (formats.Length > 4) {
-                                        flags.AnimationFormat = Enum.Parse<EAnimFormat>(formats[4]);
-                                        if (formats.Length > 5) {
-                                            flags.Language = Enum.Parse<ELanguage>(formats[5]);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                var existing = JsonConvert.DeserializeObject<Flags>(await assetDumperReader.ReadToEndAsync(), new StringEnumConverter());
+                if (existing is not null) {
+                    flags.PakPath = existing.PakPath;
+                    flags.Game = existing.Game;
+                    flags.Mappings = existing.Mappings;
+                    flags.NoJSON = existing.NoJSON;
+                    flags.NoMaterial = existing.NoMaterial;
+                    flags.NoTextures = existing.NoTextures;
+                    flags.NoSounds = existing.NoSounds;
+                    flags.NoMeshes = existing.NoMeshes;
+                    flags.NoWorlds = existing.NoWorlds;
+                    flags.NoAnimations = existing.NoAnimations;
+                    flags.NoUnknown = existing.NoUnknown;
+                    flags.TrackWwiseEvents = existing.TrackWwiseEvents;
+                    flags.RenameWwiseAudio = existing.RenameWwiseAudio;
+                    flags.SaveLocRes = existing.SaveLocRes;
+                    flags.SaveRaw = existing.SaveRaw;
+                    flags.DumpMappings = existing.DumpMappings;
+                    flags.Keys = existing.Keys;
+                    flags.KeyGuids = existing.KeyGuids;
+                    flags.Filters = existing.Filters;
+                    flags.SkipClasses = existing.SkipClasses;
+                    flags.LodFormat = existing.LodFormat;
+                    flags.MeshFormat = existing.MeshFormat;
+                    flags.TextureFormat = existing.TextureFormat;
+                    flags.AnimationFormat = existing.AnimationFormat;
+                    flags.SocketFormat = existing.SocketFormat;
+                    flags.Platform = existing.Platform;
+                    flags.Language = existing.Language;
                 }
             }
 
             assetDumperStream.SetLength(0);
 
-            await assetDumperWriter.WriteLineAsync($"path: {flags.PakPath}");
-            await assetDumperWriter.WriteLineAsync($"game: {flags.Game}");
-            await assetDumperWriter.WriteLineAsync($"mappings: {flags.Mappings}");
-            await assetDumperWriter.WriteLineAsync($"flags: {(flags.NoJSON ? "" : "json,")}{(flags.NoMaterial ? "" : "material,")}{(flags.NoTextures ? "" : "textures,")}{(flags.NoSounds ? "" : "sounds,")}{(flags.NoMeshes ? "" : "meshes,")}{(flags.NoWorlds ? "" : "worlds,")}{(flags.NoAnimations ? "" : "animations,")}{(flags.NoUnknown ? "" : "unknown,")}{(flags.WwiseEvents ? "wwnames," : "")}{(flags.WwiseRename ? "wwise," : "")}{(flags.SaveLocRes ? "locres," : "")}{(flags.Raw ? "raw," : "")}{(flags.DebugMappings ? "debug-mappings," : "")}");
-            await assetDumperWriter.WriteLineAsync($"keys: {string.Join(',', flags.Keys)}");
-            await assetDumperWriter.WriteLineAsync($"keyguids: {string.Join(',', flags.Keys)}");
-            await assetDumperWriter.WriteLineAsync($"filters: {string.Join(',', flags.Filters.Select(x => x.ToString()))}");
-            await assetDumperWriter.WriteLineAsync($"skip: {string.Join(',', flags.SkipClasses)}");
-            await assetDumperWriter.WriteLineAsync($"format: {flags.LodFormat},{flags.MeshFormat},{flags.TextureFormat},{flags.Platform},{flags.AnimationFormat},{flags.Language}");
+            await assetDumperWriter.WriteAsync(JsonConvert.SerializeObject(flags, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.Default, Converters = { new StringEnumConverter() } }));
         }
 
         Log.Logger = new LoggerConfiguration()
@@ -183,7 +113,7 @@ public static class Program {
             Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(flags.Mappings);
         }
 
-        if (flags.DebugMappings && Provider.MappingsContainer is not null) {
+        if (flags.DumpMappings && Provider.MappingsContainer?.MappingsForGame is not null) {
             await using var mappingsDump = new StreamWriter(Path.Combine(target, "Mappings.cs"));
             Provider.MappingsContainer.MappingsForGame.DumpDummyClasses(mappingsDump);
         }
@@ -274,7 +204,7 @@ public static class Program {
             filesEnumerable = filesEnumerable.Where(x => flags.Filters.Any(y => y.IsMatch(x.Key)));
         }
 
-        if (!flags.Raw) {
+        if (!flags.SaveRaw) {
             filesEnumerable = filesEnumerable.Where(x => x.Value.Extension is not ("ubulk" or "uexp" or "uptnl"));
         }
 
@@ -287,8 +217,8 @@ public static class Program {
             AnimFormat = flags.AnimationFormat,
             MaterialFormat = EMaterialFormat.AllLayers,
             TextureFormat = flags.TextureFormat,
-            Platform = ETexturePlatform.DesktopMobile,
-            SocketFormat = ESocketFormat.Bone,
+            Platform = flags.Platform,
+            SocketFormat = flags.SocketFormat,
             LodFormat = ELodFormat.FirstLod,
             ExportMaterials = true,
             ExportMorphTargets = true,
@@ -309,7 +239,7 @@ public static class Program {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile}", pc, historyType, gameFile);
             }
 
-            if (flags.Raw) {
+            if (flags.SaveRaw) {
                 var data = await gameFile.TryReadAsync();
                 if (data != null) {
                     var rawPath = Path.Combine(target, "Raw", gameFile.Path);
@@ -331,7 +261,6 @@ public static class Program {
 
             try {
                 switch (gameFile.Extension.ToLowerInvariant()) {
-                    case "wem":
                     default: {
                         if (flags.NoUnknown) {
                             break;
@@ -341,7 +270,7 @@ public static class Program {
                             targetGameFile.EnsureDirectoryExists();
                             await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
                             stream.Write(data, 0, data.Length);
-                            if (flags.WwiseRename && gameFile.Extension == "wem") {
+                            if (flags.RenameWwiseAudio && gameFile.Extension == "wem") {
                                 wemList.Add(gameFile.Path);
                             }
                         }
@@ -412,13 +341,13 @@ public static class Program {
                                 if (export.ExportType == "AkAudioEvent") {
                                     wwiseNames.Add(export.Name);
 
-                                    if (export is AkAudioEvent akAudioEvent && (flags.WwiseRename || flags.WwiseEvents)) {
-                                        if (flags.WwiseEvents) {
+                                    if (export is AkAudioEvent akAudioEvent && (flags.RenameWwiseAudio || flags.TrackWwiseEvents)) {
+                                        if (flags.TrackWwiseEvents) {
                                             wwiseNames.Add(akAudioEvent.EventCookedData.DebugName.PlainText);
                                         }
 
                                         foreach (var (locale, entry) in akAudioEvent.EventCookedData.EventLanguageMap) {
-                                            if (flags.WwiseEvents) {
+                                            if (flags.TrackWwiseEvents) {
                                                 var allDebug = entry.Media.Select(x => x as IWwiseDebugName)
                                                     .Concat(
                                                         entry.ExternalSources.Select(x => x as IWwiseDebugName))
@@ -436,7 +365,7 @@ public static class Program {
                                                 }
                                             }
 
-                                            if (flags.WwiseRename) {
+                                            if (flags.RenameWwiseAudio) {
                                                 foreach (var media in entry.Media) {
                                                     wwiseRename[media.MediaPathName.PlainText] = locale.LanguageName.PlainText + "/" + media.DebugName.PlainText.Replace('\\', '/').Replace(':', '_').Replace("..", "_");
                                                 }
@@ -480,7 +409,7 @@ public static class Program {
                                             break;
                                         }
                                         case UAnimSequence animSequence when !flags.NoAnimations: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
 
                                             var exporter = flags.AnimationFormat switch {
                                                 EAnimFormat.ActorX => new AnimExporterV2(animSequence, exportOptions, exportIndex),
@@ -492,7 +421,7 @@ public static class Program {
                                             break;
                                         }
                                         case UAnimMontage animMontage when !flags.NoAnimations: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
 
                                             var exporter = flags.AnimationFormat switch {
                                                 EAnimFormat.ActorX => new AnimExporterV2(animMontage, exportOptions, exportIndex),
@@ -504,7 +433,7 @@ public static class Program {
                                             break;
                                         }
                                         case UAnimComposite animComposite when !flags.NoAnimations: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
 
                                             var exporter = flags.AnimationFormat switch {
                                                 EAnimFormat.ActorX => new AnimExporterV2(animComposite, exportOptions, exportIndex),
@@ -516,45 +445,55 @@ public static class Program {
                                             break;
                                         }
                                         case UMaterialInstanceConstant materialInterface when !flags.NoMaterial: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
                                             var exporter = new MaterialExporter2(materialInterface, exportOptions);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UMaterial material when !flags.NoMaterial && material.CachedExpressionData != null: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
                                             var exporter = new MaterialExporter2(material, exportOptions);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UUnrealMaterial unrealMaterial when !flags.NoMaterial: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
                                             var exporter = new MaterialExporter2(unrealMaterial, exportOptions);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case USkeletalMesh skeletalMesh when !flags.NoMeshes: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
                                             var exporter = new MeshExporter(skeletalMesh, exportOptions, exportIndex);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case USkeleton skeleton when !flags.NoMeshes: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
                                             var exporter = new MeshExporter(skeleton, exportOptions, exportIndex);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UStaticMesh staticMesh when !flags.NoMeshes: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
                                             var exporter = new MeshExporter(staticMesh, exportOptions, exportIndex);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UWorld world when !flags.NoWorlds: {
-                                            target.EnsureDirectoryExists();
+                                            targetPath.EnsureDirectoryExists();
                                             var exporter = new WorldExporter(world, flags.Platform, exportIndex);
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
+                                            break;
+                                        }
+                                        case UDataTable dataTable when !flags.NoDataTable: {
+                                            targetPath.EnsureDirectoryExists();
+                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(dataTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii }));
+                                            break;
+                                        }
+                                        case UStringTable stringTable when !flags.NoStringTable: {
+                                            targetPath.EnsureDirectoryExists();
+                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(stringTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii }));
                                             break;
                                         }
                                     }
@@ -579,7 +518,7 @@ public static class Program {
             history.Save(targetHistoryPath);
         }
 
-        if (flags.WwiseEvents) {
+        if (flags.TrackWwiseEvents) {
             if (File.Exists(Path.Combine(target, "wwnames.txt"))) {
                 wwiseNames.UnionWith(await File.ReadAllLinesAsync(Path.Combine(target, "wwnames.txt")));
             }
@@ -587,7 +526,7 @@ public static class Program {
             await File.WriteAllTextAsync(Path.Combine(target, "wwnames.txt"), string.Join('\n', wwiseNames));
         }
 
-        if (flags.WwiseRename) {
+        if (flags.RenameWwiseAudio) {
             foreach (var (hashedPath, realPath) in wwiseRename) {
                 if (string.IsNullOrEmpty(realPath)) {
                     continue;
