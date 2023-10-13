@@ -36,6 +36,7 @@ using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.UE4.Wwise.Exports;
 using DragonLib;
 using DragonLib.CommandLine;
+using DragonLib.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Serilog;
@@ -174,6 +175,10 @@ public static class Program {
 
         AbstractUePackage.SkipClasses.UnionWith(flags.SkipClasses);
 
+        if (flags.SkipMapBuiltData) {
+            AbstractUePackage.SkipClasses.Add("MapBuildDataRegistry");
+        }
+
         foreach (var keyGuid in Provider.RequiredKeys) {
             if (!Provider.Keys.ContainsKey(keyGuid)) {
                 Log.Error("Requires missing encryption key 0x{Key}", keyGuid.ToString(EGuidFormats.Digits));
@@ -202,7 +207,7 @@ public static class Program {
         var wwiseRename = new Dictionary<string, string>();
         var wemList = new List<string>();
 
-        var filesEnumerable = Provider.Files.DistinctBy(x => x.Key);
+        var filesEnumerable = Provider.Files.Where(x => x.Value is VfsEntry).DistinctBy(x => x.Key);
         if (flags.Filters.Any()) {
             filesEnumerable = filesEnumerable.Where(x => flags.Filters.Any(y => y.IsMatch(x.Key)));
         }
@@ -210,6 +215,9 @@ public static class Program {
         if (!flags.SaveRaw) {
             filesEnumerable = filesEnumerable.Where(x => x.Value.Extension is not ("ubulk" or "uexp" or "uptnl"));
         }
+
+        filesEnumerable = filesEnumerable.OrderBy(x => Path.GetFileName(((VfsEntry)x.Value).Vfs.Path).Replace('.', '_'), new NaturalStringComparer(StringComparison.Ordinal))
+            .ThenBy(x => x.Key, new NaturalStringComparer(StringComparison.Ordinal));
 
         var files = filesEnumerable.ToArray();
         var count = (float)files.Length;
@@ -341,6 +349,12 @@ public static class Program {
                     case "umap": {
                         try {
                             var exports = Provider.LoadAllObjects(path).ToArray();
+                            if (flags.SkipMapBuiltData) {
+                                if (exports.Any(x => x.Class.Name == "MapBuildDataRegistry")) {
+                                    continue;
+                                }
+                            }
+
                             var targetPath = Path.Combine(target, gameFile.PathWithoutExtension.SanitizeDirname());
 
                             if (!flags.NoJSON) {

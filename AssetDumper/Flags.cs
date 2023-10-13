@@ -22,6 +22,9 @@ public record Flags : CommandLineFlags {
     [Flag("locres", Help = "Saave localization data", Category = "Export")]
     public bool SaveLocRes { get; set; }
 
+    [Flag("skip-mapbuiltdata", Help = "Suppress Map BuiltData conversion", Category = "Export")]
+    public bool SkipMapBuiltData { get; set; }
+
     [Flag("no-json", Help = "Suppress JSON generation", Category = "Export")]
     public bool NoJSON { get; set; }
 
@@ -84,7 +87,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("socket-format", Help = "Socket format to use", Category = "CUE4Parse")]
     public ESocketFormat SocketFormat { get; set; } = ESocketFormat.Socket;
-    
+
     [Flag("material-format", Help = "Material format to use", Category = "CUE4Parse")]
     public EMaterialFormat MaterialFormat { get; set; } = EMaterialFormat.AllLayersNoGuess;
 
