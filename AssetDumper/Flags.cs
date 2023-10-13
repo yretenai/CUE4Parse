@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Textures;
+using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Versions;
 using DragonLib.CommandLine;
@@ -83,6 +84,9 @@ public record Flags : CommandLineFlags {
 
     [Flag("socket-format", Help = "Socket format to use", Category = "CUE4Parse")]
     public ESocketFormat SocketFormat { get; set; } = ESocketFormat.Socket;
+    
+    [Flag("material-format", Help = "Material format to use", Category = "CUE4Parse")]
+    public EMaterialFormat MaterialFormat { get; set; } = EMaterialFormat.AllLayersNoGuess;
 
     [Flag("platform", Help = "Platform of the game", Category = "CUE4Parse")]
     public ETexturePlatform Platform { get; set; } = ETexturePlatform.DesktopMobile;

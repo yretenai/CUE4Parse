@@ -239,10 +239,10 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                 switch (materialExpression)
                 {
                     case UMaterialExpressionTextureSampleParameter { Texture: not null } textureSample:
-                        parameters.VerifyTexture(textureSample.ParameterName.Text, textureSample.Texture, true, textureSample.SamplerType);
+                        parameters.Textures[textureSample.ParameterName.Text] = textureSample.Texture;
                         break;
                     case UMaterialExpressionTextureBase { Texture: not null } textureBase:
-                        parameters.VerifyTexture(textureBase.Texture.Name, textureBase.Texture, true, textureBase.SamplerType);
+                        parameters.Textures[textureBase.Texture.Name] = textureBase.Texture;
                         break;
                     case UMaterialExpressionVectorParameter vectorParameter:
                         parameters.Colors[vectorParameter.ParameterName.Text] = vectorParameter.DefaultValue;
@@ -261,12 +261,12 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                 for (int i = 0; i < ReferencedTextures.Count; i++)
                 {
                     if (ReferencedTextures[i] is not { } texture) continue;
-                    parameters.Textures[texture.Name] = texture;
+                    parameters.ReferencedTextures[texture.Name] = texture;
                 }
             }
 
             base.GetParams(parameters, format);
-            if (format == EMaterialFormat.AllLayersNoRef) return;
+            if (format is EMaterialFormat.AllLayersNoRef or EMaterialFormat.AllLayersNoGuess) return;
 
             if (ReferencedTextures.Count == 1 && ReferencedTextures[0] is { } fallback)
             {

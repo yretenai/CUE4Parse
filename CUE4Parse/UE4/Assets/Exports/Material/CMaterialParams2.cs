@@ -26,16 +26,18 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
         public const string RegexSpecularMasks = "^SP_|.*(?:Specu|_S_|MR|(?<!no)RM).*|(?:_S|_LP|_PAK)$";
         public const string RegexEmissive = ".*Emiss.*|(?:_E|_EM)$";
 
+        /*
         public bool HasTopDiffuse => HasTopTexture(Diffuse[0]);
         public bool HasTopNormals => HasTopTexture(Normals[0]);
         public bool HasTopSpecularMasks => HasTopTexture(SpecularMasks[0]);
         public bool HasTopEmissive => HasTopTexture(Emissive[0]);
+        */
 
         public EBlendMode BlendMode = EBlendMode.BLEND_Opaque;
         public EMaterialShadingModel ShadingModel = EMaterialShadingModel.MSM_Unlit;
 
         public bool IsTranslucent => BlendMode == EBlendMode.BLEND_Translucent;
-        public bool IsNull => Textures.Count == 0;
+        public bool IsNull => Textures.Count == 0 && ReferencedTextures.Count == 0;
 
         /// <summary>
         /// SWITCH TO REGEX ONCE WE HAVE A GOOD OVERVIEW OF TEXTURE NAMES
@@ -145,6 +147,8 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
 
         [JsonIgnore]
         public readonly Dictionary<string, UUnrealMaterial> Textures = new ();
+        [JsonIgnore]
+        public readonly Dictionary<string, UUnrealMaterial> ReferencedTextures = new ();
         public readonly Dictionary<string, FLinearColor> Colors = new ();
         public readonly Dictionary<string, float> Scalars = new ();
         public readonly Dictionary<string, bool> Switches = new ();
@@ -156,6 +160,8 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
             {
                 if (Textures.TryGetValue(name, out var y))
                     yield return y;
+                if (ReferencedTextures.TryGetValue(name, out y))
+                    yield return y;
             }
         }
 
@@ -164,6 +170,8 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
             foreach (string name in names)
             {
                 if (Textures.TryGetValue(name, out var y))
+                    yield return y;
+                else if (ReferencedTextures.TryGetValue(name, out y))
                     yield return y;
                 else yield return null;
             }
@@ -174,6 +182,9 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
             foreach ((string key, UUnrealMaterial value) in Textures)
                 if (regex.IsMatch(key))
                     yield return value;
+            foreach ((string key, UUnrealMaterial value) in ReferencedTextures)
+                if (regex.IsMatch(key))
+                    yield return value;
         }
 
         public bool TryGetFirstTexture2d(out UTexture2D? texture)
@@ -181,6 +192,12 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
             if (Textures.First() is { Value: UTexture2D texture2D })
             {
                 texture = texture2D;
+                return true;
+            }
+
+            if (ReferencedTextures.First() is { Value: UTexture2D refTexture2D })
+            {
+                texture = refTexture2D;
                 return true;
             }
 
@@ -216,6 +233,12 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                             found = true;
                             break;
                         }
+                        if (ReferencedTextures.ContainsKey(names[uvset][index]))
+                        {
+                            mapping[i] = new TextureMapping { UVSet = uvset, Index = index };
+                            found = true;
+                            break;
+                        }
                     }
 
                     index++;
@@ -233,6 +256,11 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                 if (Textures.TryGetValue(names[i], out var unrealMaterial) && unrealMaterial is UTexture2D texture2d)
                 {
                     texture = texture2d;
+                    return true;
+                }
+                if (ReferencedTextures.TryGetValue(names[i], out var refUnrealMaterial) && refUnrealMaterial is UTexture2D refTexture2d)
+                {
+                    texture = refTexture2d;
                     return true;
                 }
             }

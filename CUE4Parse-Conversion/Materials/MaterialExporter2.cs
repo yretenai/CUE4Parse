@@ -5,6 +5,7 @@ using CUE4Parse_Conversion.Textures;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using SkiaSharp;
 
 namespace CUE4Parse_Conversion.Materials
@@ -12,6 +13,7 @@ namespace CUE4Parse_Conversion.Materials
     public struct MaterialData
     {
         public Dictionary<string, string> Textures;
+        public HashSet<string> ReferencedTextures;
         public CMaterialParams2 Parameters;
     }
 
@@ -27,7 +29,8 @@ namespace CUE4Parse_Conversion.Materials
             _materialData = new MaterialData
             {
                 Textures = new Dictionary<string, string>(),
-                Parameters = new CMaterialParams2()
+                ReferencedTextures = new HashSet<string>(),
+                Parameters = new CMaterialParams2(),
             };
         }
 
@@ -41,6 +44,10 @@ namespace CUE4Parse_Conversion.Materials
             {
                 _materialData.Textures[key] = value.GetPathName();
             }
+            foreach ((string key, UUnrealMaterial value) in _materialData.Parameters.ReferencedTextures)
+            {
+                _materialData.ReferencedTextures.Add(value.GetPathName());
+            }
         }
 
         private readonly object _texture = new ();
@@ -51,7 +58,7 @@ namespace CUE4Parse_Conversion.Materials
             if (!baseDirectory.Exists) return false;
 
             savedFilePath = FixAndCreatePath(baseDirectory, _internalFilePath, "json");
-            File.WriteAllText(savedFilePath, JsonConvert.SerializeObject(_materialData, Formatting.Indented));
+            File.WriteAllText(savedFilePath, JsonConvert.SerializeObject(_materialData, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
             label = Path.GetFileName(savedFilePath);
 
             /*

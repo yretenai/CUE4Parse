@@ -6,9 +6,11 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
     {
         [Description("First Layer Only")]
         FirstLayer,
-        [Description("All Layers (Without Referenced Textures)")]
+        [Description("All Layers (Without Referenced Textures, Not Guessing Types)")]
         AllLayersNoRef,
         [Description("All Layers (With All Referenced Textures)")]
-        AllLayers
+        AllLayers,
+        [Description("All Layers (With All Referenced Textures, Not Guessing Types)")]
+        AllLayersNoGuess,
     }
 }

@@ -78,8 +78,6 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                 var name = TextureStreamingData[i].TextureName.Text;
                 if (!parameters.TryGetTexture2d(out var texture, name))
                     continue;
-
-                parameters.VerifyTexture(name, texture, false);
             }
 
             // *****************************************
@@ -109,7 +107,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                     var name = textureParameterInfos[i].Name.Text;
                     if (!textureValues[i].TryLoad(out UTexture texture)) continue;
 
-                    parameters.VerifyTexture(name, texture);
+                    parameters.Textures[name] = texture;
                 }
             }
         }

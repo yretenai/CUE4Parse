@@ -76,6 +76,8 @@ public static class Program {
                     flags.NoMeshes = existing.NoMeshes;
                     flags.NoWorlds = existing.NoWorlds;
                     flags.NoAnimations = existing.NoAnimations;
+                    flags.NoDataTable = existing.NoDataTable;
+                    flags.NoStringTable = existing.NoStringTable;
                     flags.NoUnknown = existing.NoUnknown;
                     flags.TrackWwiseEvents = existing.TrackWwiseEvents;
                     flags.RenameWwiseAudio = existing.RenameWwiseAudio;
@@ -91,6 +93,7 @@ public static class Program {
                     flags.TextureFormat = existing.TextureFormat;
                     flags.AnimationFormat = existing.AnimationFormat;
                     flags.SocketFormat = existing.SocketFormat;
+                    flags.MaterialFormat = existing.MaterialFormat;
                     flags.Platform = existing.Platform;
                     flags.Language = existing.Language;
                 }
@@ -180,7 +183,7 @@ public static class Program {
         Provider.LoadLocalization(flags.Language);
 
         if (flags.SaveLocRes) {
-            await File.WriteAllTextAsync(Path.Combine(target, "localization.json"), JsonConvert.SerializeObject(Provider.LocalizedResources, Formatting.Indented));
+            await File.WriteAllTextAsync(Path.Combine(target, "localization.json"), JsonConvert.SerializeObject(Provider.LocalizedResources, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
         }
 
         if (flags.Dry) {
@@ -215,11 +218,11 @@ public static class Program {
         var exportOptions = new ExporterOptions {
             MeshFormat = flags.MeshFormat,
             AnimFormat = flags.AnimationFormat,
-            MaterialFormat = EMaterialFormat.AllLayers,
+            MaterialFormat = flags.MaterialFormat,
             TextureFormat = flags.TextureFormat,
             Platform = flags.Platform,
             SocketFormat = flags.SocketFormat,
-            LodFormat = ELodFormat.FirstLod,
+            LodFormat = flags.LodFormat,
             ExportMaterials = true,
             ExportMorphTargets = true,
         };
@@ -284,7 +287,6 @@ public static class Program {
                             break;
                         }
 
-
                         if (Provider.TrySaveAsset(path, out var data)) {
                             targetGameFile.EnsureDirectoryExists();
                             await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
@@ -302,7 +304,7 @@ public static class Program {
 
                         if (Provider.TryCreateReader(path, out var archive)) {
                             targetJsonPath.EnsureDirectoryExists();
-                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationResource(archive), Formatting.Indented));
+                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationResource(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                         }
 
                         break;
@@ -315,7 +317,7 @@ public static class Program {
 
                         if (Provider.TryCreateReader(path, out var archive)) {
                             targetJsonPath.EnsureDirectoryExists();
-                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationMetaDataResource(archive), Formatting.Indented));
+                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationMetaDataResource(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                         }
 
                         break;
@@ -329,7 +331,7 @@ public static class Program {
 
                         if (Provider.TryCreateReader(path, out var archive)) {
                             targetJsonPath.EnsureDirectoryExists();
-                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FShaderCodeArchive(archive), Formatting.Indented));
+                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FShaderCodeArchive(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                         }
 
                         break;
@@ -346,7 +348,7 @@ public static class Program {
                                 if (exports.All(x => x.Class?.Name.StartsWith("MovieScene") != true)) {
                                     targetJsonPath.EnsureDirectoryExists();
                                     try {
-                                        await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(exports, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii }));
+                                        await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(exports, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                                     } catch (Exception e) {
                                         Log.Error(e, "Failed to convert UObject exports to JSON");
                                     }
@@ -505,12 +507,12 @@ public static class Program {
                                         }
                                         case UDataTable dataTable when !flags.NoDataTable: {
                                             targetPath.EnsureDirectoryExists();
-                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(dataTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii }));
+                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(dataTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                                             break;
                                         }
                                         case UStringTable stringTable when !flags.NoStringTable: {
                                             targetPath.EnsureDirectoryExists();
-                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(stringTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii }));
+                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(stringTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                                             break;
                                         }
                                     }

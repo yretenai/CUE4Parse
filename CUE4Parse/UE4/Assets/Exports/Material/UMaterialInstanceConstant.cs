@@ -257,8 +257,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                 if (!textureParameter.ParameterValue.TryLoad(out UTexture texture))
                     continue;
 
-                if (!parameters.VerifyTexture(textureParameter.Name, texture))
-                    parameters.VerifyTexture(texture.Name, texture);
+                parameters.Textures[textureParameter.Name] = texture;
             }
 
             foreach (var vectorParameter in VectorParameterValues)
