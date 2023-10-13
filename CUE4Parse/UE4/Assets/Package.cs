@@ -208,6 +208,10 @@ namespace CUE4Parse.UE4.Assets
                 importPackage = package as Package;
             if (importPackage == null)
             {
+                if (outerMostImport.ObjectName.Text == "/ACLPlugin/ACLAnimBoneCompressionSettings")
+                {
+                    return new ResolvedLoadedObject(Provider.LoadObject("/Engine/Plugins/ACLPlugin/Content/ACLAnimBoneCompressionSettings"));
+                }
 #if DEBUG
                 Log.Error("Missing native package ({0}) for import of {1} in {2}.", outerMostImport.ObjectName, import.ObjectName, Name);
 #endif
