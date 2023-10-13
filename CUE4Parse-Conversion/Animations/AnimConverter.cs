@@ -228,7 +228,14 @@ namespace CUE4Parse_Conversion.Animations
         {
             var refFrameIndex = animSeq.OriginalSequence.RefFrameIndex;
             var refPoseSkel = refPoseSeq?.Skeleton.Load<USkeleton>() ?? skeleton;
-            var refAnimSet = refPoseSkel.ConvertAnims(refPoseSeq);
+            CAnimSet refAnimSet;
+            if (refPoseSeq.GetFullName() == animSeq.OriginalSequence.GetFullName()) {
+                refAnimSet = skeleton.ConvertToAnimSet();
+                refAnimSet.Sequences.Add(animSeq);
+                refAnimSet.TotalAnimTime = animSeq.OriginalSequence.SequenceLength;;
+            } else {
+                refAnimSet = refPoseSkel.ConvertAnims(refPoseSeq);
+            }
 
             FCompactPose[] additivePoses = FAnimationRuntime.LoadAsPoses(animSeq, skeleton);
             FCompactPose[] referencePoses = animSeq.OriginalSequence.RefPoseType switch
