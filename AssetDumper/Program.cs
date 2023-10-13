@@ -337,6 +337,8 @@ public static class Program {
                             break;
                         }
 
+                        var package = await Provider.LoadPackageAsync(path);
+                        targetJsonPath = Path.Combine(target, "Json", package.Name + ".json");
                         if (Provider.TryCreateReader(path, out var archive)) {
                             targetJsonPath.EnsureDirectoryExists();
                             await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FShaderCodeArchive(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
@@ -348,14 +350,22 @@ public static class Program {
                     case "uasset":
                     case "umap": {
                         try {
-                            var exports = Provider.LoadAllObjects(path).ToArray();
+                            var package = await Provider.LoadPackageAsync(path);
                             if (flags.SkipMapBuiltData) {
-                                if (exports.Any(x => x.Class.Name == "MapBuildDataRegistry")) {
-                                    continue;
+                                if (package is IoPackage ioPackage) {
+                                    if (ioPackage.ExportMap.Any(x => ioPackage.ResolveObjectIndex(x.ClassIndex)?.Class?.Name == "MapBuildDataRegistry")) {
+                                        break;
+                                    }
+                                } else if (package is Package ue4Package) {
+                                    if (ue4Package.ExportMap.Any(x => x.ClassIndex.ResolvedObject?.Class?.Name == "MapBuildDataRegistry")) {
+                                        break;
+                                    }
                                 }
                             }
 
-                            var targetPath = Path.Combine(target, gameFile.PathWithoutExtension.SanitizeDirname());
+                            var targetPath = Path.Combine(target, package.Name);
+                            targetJsonPath = Path.Combine(target, "Json", package.Name + ".json");
+                            var exports = package.GetExports().ToArray();
 
                             if (!flags.NoJSON) {
                                 // FMovieScene causes a lot of out-of-memory issues while serializing.
@@ -371,6 +381,7 @@ public static class Program {
 
                             for (var exportIndex = 0; exportIndex < exports.Length; exportIndex++) {
                                 var export = exports[exportIndex];
+
                                 if (export.ExportType == "AkAudioEvent") {
                                     wwiseNames.Add(export.Name);
 
