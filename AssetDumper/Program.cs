@@ -278,6 +278,23 @@ public static class Program {
                         break;
                     }
 
+                    case "bnk":
+                    case "wem": {
+                        if (flags.NoSounds) {
+                            break;
+                        }
+
+
+                        if (Provider.TrySaveAsset(path, out var data)) {
+                            targetGameFile.EnsureDirectoryExists();
+                            await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                            stream.Write(data, 0, data.Length);
+                            wemList.Add(gameFile.Path);
+                        }
+
+                        break;
+                    }
+
                     case "locres": {
                         if (flags.NoJSON) {
                             break;
