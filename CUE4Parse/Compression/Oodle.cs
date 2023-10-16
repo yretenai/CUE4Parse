@@ -12,7 +12,7 @@ namespace CUE4Parse.Compression {
         public OodleException(FArchive reader, string? message = null, Exception? innerException = null) : base(reader, message, innerException) { }
         public OodleException(string? message, Exception? innerException) : base(message, innerException) { }
         public OodleException(string message) : base(message) { }
-        public OodleException() : base("Oodle decompression failed") {  }
+        public OodleException() : base("Oodle decompression failed") { }
     }
 
     public static class Oodle {
@@ -20,6 +20,7 @@ namespace CUE4Parse.Compression {
             get {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                     yield return "oo2core*win64.dll";
+
                     yield break;
                 }
 
@@ -29,6 +30,7 @@ namespace CUE4Parse.Compression {
                     } else {
                         yield return "oo2core*linux64.so";
                     }
+
                     yield break;
                 }
 
