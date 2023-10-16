@@ -22,15 +22,22 @@ namespace CUE4Parse.UE4.Objects.Meshes
                 if (valorantVersion >= EValorantGame.EP4) {
                     var bUseFullPrecisionPositions = Ar.ReadBoolean();
                     if (valorantVersion >= EValorantGame.EP6) {
-                        _ = new FBoxSphereBounds(Ar);
-                    }
-
-                    if (!bUseFullPrecisionPositions) {
-                        var vertsHalf = Ar.ReadBulkArray<FVector4Half>();
-                        Verts = new FVector[vertsHalf.Length];
-                        for (var i = 0; i < vertsHalf.Length; i++)
-                            Verts[i] = vertsHalf[i]; // W appears to be all zeros (alignment?), simply dropping
-                        return;
+                        var bounds = new FBoxSphereBounds(Ar);
+                        if (!bUseFullPrecisionPositions) {
+                            var vertsHalf = Ar.ReadBulkArray<FVector3SignedShortScale>();
+                            Verts = new FVector[vertsHalf.Length];
+                            for (int i = 0; i < vertsHalf.Length; i++)
+                                Verts[i] = vertsHalf[i] * bounds.BoxExtent + bounds.Origin;
+                            return;
+                        }
+                    } else {
+                        if (!bUseFullPrecisionPositions) {
+                            var vertsHalf = Ar.ReadBulkArray<FVector4Half>();
+                            Verts = new FVector[vertsHalf.Length];
+                            for (var i = 0; i < vertsHalf.Length; i++)
+                                Verts[i] = vertsHalf[i];
+                            return;
+                        }
                     }
                 }
             }
