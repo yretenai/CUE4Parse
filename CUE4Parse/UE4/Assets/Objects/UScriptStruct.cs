@@ -150,6 +150,8 @@ namespace CUE4Parse.UE4.Assets.Objects
                 "RsBitfield_WorldMapLODLevel" => new FRsBitfield(Ar, structName),
                 "RsBitfield_WorldMapWidgetFilterType" => new FRsBitfield(Ar, structName),
 
+                "KeyHandleMap" => new FStructFallback(), // this has no properties/is editor only? TODO: add game flags if this crashes
+
                 _ => type == ReadType.ZERO ? new FStructFallback() : struc != null ? new FStructFallback(Ar, struc) : new FStructFallback(Ar, structName)
             };
         }
