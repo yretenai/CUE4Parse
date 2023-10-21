@@ -7,18 +7,12 @@ namespace CUE4Parse.MappingsProvider
     public class TypeMappings
     {
         public readonly Dictionary<string, Struct> Types;
-        public readonly Dictionary<string, Dictionary<int, string>> Enums;
-
-        public TypeMappings(Dictionary<string, Struct> types, Dictionary<string, Dictionary<int, string>> enums)
-        {
-            Types = types;
-            Enums = enums;
-        }
+        public readonly Dictionary<string, List<(long, string)>> Enums;
 
         public TypeMappings()
         {
             Types = new Dictionary<string, Struct>();
-            Enums = new Dictionary<string, Dictionary<int, string>>();
+            Enums = new Dictionary<string, List<(long, string)>>();
         }
 
         public string PropertyToType(PropertyType? prop)
@@ -74,15 +68,15 @@ namespace CUE4Parse.MappingsProvider
                 foreach (var (_, prop) in s.Properties)
                 {
                     writer.Write($"\t\tpublic {PropertyToType(prop.MappingType)} {prop.Name}");
-                    
+
                     if (prop.ArraySize > 1)
                     {
                         writer.Write("[]");
                     }
-                    
+
                     writer.WriteLine($" {{ get; set; }}; // ArraySize: {prop.ArraySize - 1}, Index: {prop.Index}");
                 }
-                
+
                 writer.WriteLine("\t}");
             }
         }

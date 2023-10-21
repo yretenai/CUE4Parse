@@ -51,11 +51,13 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
                 return string.Concat(enumName, "::", index);
             }
 
-            if (Ar.Owner.Mappings != null &&
-                Ar.Owner.Mappings.Enums.TryGetValue(enumName, out var values) &&
-                values.TryGetValue(index, out var member))
-            {
-                return string.Concat(enumName, "::", member);
+            if (Ar.Owner?.Mappings != null &&
+                Ar.Owner.Mappings.Enums.TryGetValue(enumName, out var values)) {
+                foreach (var (value, member) in values) {
+                    if (value == index) {
+                        return string.Concat(enumName, "::", member);
+                    }
+                }
             }
 
             return string.Concat(enumName, "::", index);

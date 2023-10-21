@@ -28,6 +28,7 @@ namespace CUE4Parse.UE4.Assets.Exports
     {
         public string Name { get; set; }
         public UObject? Outer;
+        public FPackageIndex? ClassIndex;
         public UStruct? Class;
         public ResolvedObject? Super;
         public ResolvedObject? Template;
@@ -73,7 +74,7 @@ namespace CUE4Parse.UE4.Assets.Exports
             {
                 if (Class == null)
                     throw new ParserException(Ar, "Found unversioned properties but object does not have a class");
-                DeserializePropertiesUnversioned(Properties = new List<FPropertyTag>(), Ar, Class);
+                DeserializePropertiesUnversioned(Properties = new List<FPropertyTag>(), Ar, Class, ClassIndex?.ResolvedObject?.Outer?.Name.PlainText);
             }
             else
             {
@@ -188,7 +189,7 @@ namespace CUE4Parse.UE4.Assets.Exports
 
         }
 
-        internal static void DeserializePropertiesUnversioned(List<FPropertyTag> properties, FAssetArchive Ar, UStruct struc)
+        internal static void DeserializePropertiesUnversioned(List<FPropertyTag> properties, FAssetArchive Ar, UStruct struc, string? module)
         {
             var header = new FUnversionedHeader(Ar);
             if (!header.HasValues)
@@ -196,10 +197,13 @@ namespace CUE4Parse.UE4.Assets.Exports
             var type = struc.Name;
 
             Struct? propMappings = null;
-            if (struc is UScriptClass)
-                Ar.Owner.Mappings?.Types.TryGetValue(type, out propMappings);
-            else
-                propMappings = new SerializedStruct(Ar.Owner.Mappings, struc);
+            if (struc is UScriptClass) {
+                if (Ar.Owner?.Mappings?.Types.TryGetValue($"{module ?? ""}/{type}", out propMappings) == false) {
+                    Ar.Owner?.Mappings?.Types.TryGetValue(type, out propMappings);
+                }
+            } else {
+                propMappings = Ar.Owner?.Mappings?.Types.ContainsKey($"{module ?? ""}/{type}") == true ? new SerializedStruct(Ar.Owner?.Mappings, struc, $"{module}/{type}") : new SerializedStruct(Ar.Owner?.Mappings, struc);
+            }
 
             if (propMappings == null)
             {
