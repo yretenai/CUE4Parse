@@ -21,16 +21,8 @@ namespace CUE4Parse.Compression {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                     yield return "oo2core*win64.dll";
 
-<<<<<<< HEAD
                     yield break;
                 }
-=======
-        private const string WARFRAME_CONTENT_HOST = "https://content.warframe.com";
-        private const string WARFRAME_ORIGIN_HOST = "https://origin.warframe.com";
-        private const string WARFRAME_INDEX_PATH = "/origin/50F7040A/index.txt.lzma";
-        private const string WARFRAME_INDEX_URL = WARFRAME_ORIGIN_HOST + WARFRAME_INDEX_PATH;
-        public const string OODLE_DLL_NAME = "oo2core_9_win64.dll";
->>>>>>> fork/master
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                     if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
@@ -48,6 +40,8 @@ namespace CUE4Parse.Compression {
                     }
 
                     yield return "oo2core*mac64.dylib";
+
+                    yield break;
                 }
 
                 throw new PlatformNotSupportedException();

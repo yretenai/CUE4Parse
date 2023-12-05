@@ -44,23 +44,11 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <BuildInParallel>false</BuildInParallel> <!-- we can't run 2 cmake build at same time -->
-    <CMakeProject>../CUE4Parse-Natives/</CMakeProject>
-    <CMakeBuildDir>$(CMakeProject)builddir</CMakeBuildDir>
+    <CMakeBuildDir>../CUE4Parse-Natives/builddir</CMakeBuildDir>
   </PropertyGroup>
 
   <Target Name="Build-Natives" BeforeTargets="BeforeBuild" AfterTargets="AfterBuild">
-    <MakeDir Directories="$(CMakeBuildDir)" Condition="!Exists('$(CMakeBuildDir)')" />
-    <Exec Command="cmake .." ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)" IgnoreExitCode="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-      <Output TaskParameter="ExitCode" PropertyName="CMakeExitCode" />
-    </Exec>
-    <Exec Condition=" '$(CMakeExitCode)' == '0' " Command="cmake --build . --config $(Configuration) --target install" ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)">
-      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-      <Output TaskParameter="ExitCode" PropertyName="CMakeExitCode" />
-    </Exec>
-    <Message Condition=" '$(CMakeExitCode)' != '0' " Importance="high" Text="CUE4Parse-Natives build failed. Continuing without it. ERROR: '$(OutputOfExec)'" />
-    <ItemGroup Condition=" '$(CMakeExitCode)' == '0' ">
+    <ItemGroup>
       <Content Include="..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.dll" Condition=" '$(OS)' == 'Windows_NT' ">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <PackagePath>lib/$(TargetFramework)</PackagePath>
@@ -81,13 +69,5 @@
         <PackageCopyToOutput>true</PackageCopyToOutput>
       </Content>
     </ItemGroup>
-  </Target>
-
-  <!-- remove everything?? -->
-  <Target Name="CleanCMakeProj" BeforeTargets="BeforeClean">
-    <RemoveDir Directories="$(CMakeBuildDir);$(CMakeProject)bin/">
-      <Output TaskParameter="RemovedDirectories" ItemName="DeletedList" />
-    </RemoveDir>
-    <Message Text="Deleted directories: '@(DeletedList)'" />
   </Target>
 </Project>

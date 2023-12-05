@@ -195,39 +195,36 @@ public static class TextureDecoder
                 data = BCDecoder.BC5(bytes, sizeX, sizeY);
                 colorType = SKColorType.Rgb888x;
                 break;
-            case EPixelFormat.PF_BC6H:
-                // BC6H doesn't work no matter the pixel format, the closest we can get is either
-                // Rgb565 DETEX_PIXEL_FORMAT_FLOAT_RGBX16 or Rgb565 DETEX_PIXEL_FORMAT_FLOAT_BGRX16
-
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, true,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_BPTC_FLOAT,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_FLOAT_RGBX16);
-                colorType = SKColorType.Rgb565;
+            case EPixelFormat.PF_BC6H: {
+                data = new byte[sizeX * sizeY * 4];
+                AssetRipper.TextureDecoder.Bc.Bc6h.Decompress(bytes, sizeX, sizeY, true, data);
+                colorType = SKColorType.Bgra8888;
                 break;
-            case EPixelFormat.PF_BC7:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_BPTC,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+            }
+            case EPixelFormat.PF_BC7: {
+                data = new byte[sizeX * sizeY * 4];
+                AssetRipper.TextureDecoder.Bc.Bc7.Decompress(bytes, sizeX, sizeY, data);
+                colorType = SKColorType.Bgra8888;
                 break;
-            case EPixelFormat.PF_ETC1:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_ETC1,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+            }
+            case EPixelFormat.PF_ETC1: {
+                data = new byte[sizeX * sizeY * 4];
+                AssetRipper.TextureDecoder.Etc.EtcDecoder.DecompressETC(bytes, sizeX, sizeY, data);
+                colorType = SKColorType.Bgra8888;
                 break;
-            case EPixelFormat.PF_ETC2_RGB:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_ETC2,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+            }
+            case EPixelFormat.PF_ETC2_RGB: {
+                data = new byte[sizeX * sizeY * 4];
+                AssetRipper.TextureDecoder.Etc.EtcDecoder.DecompressETC2(bytes, sizeX, sizeY, data);
+                colorType = SKColorType.Bgra8888;
                 break;
-            case EPixelFormat.PF_ETC2_RGBA:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_ETC2_EAC,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+            }
+            case EPixelFormat.PF_ETC2_RGBA: {
+                data = new byte[sizeX * sizeY * 4];
+                AssetRipper.TextureDecoder.Etc.EtcDecoder.DecompressETC2A8(bytes, sizeX, sizeY, data);
+                colorType = SKColorType.Bgra8888;
                 break;
+            }
             case EPixelFormat.PF_R16F:
             case EPixelFormat.PF_R16F_FILTER:
             case EPixelFormat.PF_G16:
