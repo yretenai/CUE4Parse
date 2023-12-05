@@ -45,7 +45,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <CMakeBuildDir>../CUE4Parse-Natives/builddir</CMakeBuildDir>
+    <CMakeBuildDir>../CUE4Parse-Natives/buildDir</CMakeBuildDir>
   </PropertyGroup>
 
   <Target Name="Build-Natives" BeforeTargets="BeforeBuild" AfterTargets="AfterBuild">
