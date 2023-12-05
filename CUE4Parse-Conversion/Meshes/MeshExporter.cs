@@ -28,7 +28,7 @@ namespace CUE4Parse_Conversion.Meshes
         {
             MeshLods = new List<Mesh>();
 
-            if (!originalSkeleton.TryConvert(out var bones) || bones.Count == 0)
+            if (!originalSkeleton.TryConvert(out var bones, out _) || bones.Count == 0)
             {
                 Log.Logger.Warning($"Skeleton '{ExportName}' has no bone");
                 return;
