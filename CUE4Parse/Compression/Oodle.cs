@@ -16,19 +16,20 @@ namespace CUE4Parse.Compression {
     }
 
     public static class Oodle {
+        // todo: download from https://github.com/WorkingRobot/OodleUE/tree/main ?
         public static IEnumerable<string> OodleLibName {
             get {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                    yield return "oo2core*win64.dll";
+                    yield return "*oo2core*win64.dll";
 
                     yield break;
                 }
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                     if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
-                        yield return "oo2core*linuxarm64.so";
+                        yield return "*oo2core*linuxarm64.so";
                     } else {
-                        yield return "oo2core*linux64.so";
+                        yield return "*oo2core*linux64.so";
                     }
 
                     yield break;
@@ -36,10 +37,10 @@ namespace CUE4Parse.Compression {
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                     if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
-                        yield return "oo2core*macarm64.dylib";
+                        yield return "*oo2core*macarm64.dylib";
                     }
 
-                    yield return "oo2core*mac64.dylib";
+                    yield return "*oo2core*mac64.dylib";
 
                     yield break;
                 }
@@ -68,13 +69,11 @@ namespace CUE4Parse.Compression {
                 return false;
             }
 
-            var handle = NativeLibrary.Load(path);
-            if (handle == IntPtr.Zero) {
+            if (!NativeLibrary.TryLoad(path, out var handle)) {
                 return false;
             }
 
-            var address = NativeLibrary.GetExport(handle, nameof(OodleLZ_Decompress));
-            if (address == IntPtr.Zero) {
+            if (!NativeLibrary.TryGetExport(handle, nameof(OodleLZ_Decompress), out var address)) {
                 return false;
             }
 

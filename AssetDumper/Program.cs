@@ -281,9 +281,6 @@ public static class Program {
                             targetGameFile.EnsureDirectoryExists();
                             await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
                             stream.Write(data, 0, data.Length);
-                            if (flags.RenameWwiseAudio && gameFile.Extension == "wem") {
-                                wemList.Add(gameFile.Path);
-                            }
                         }
 
                         break;
