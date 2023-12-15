@@ -110,6 +110,11 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
                     return null;
             }
         }
+        
+        public T? GetValue<T>()
+        {
+            return (T?) GetValue(typeof(T));
+        }
 
         public abstract override string ToString();
 
