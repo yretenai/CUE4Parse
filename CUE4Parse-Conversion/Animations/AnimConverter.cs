@@ -217,8 +217,9 @@ namespace CUE4Parse_Conversion.Animations
             }
 
             // ok?
+            if (animSequence.IsValidAdditive()) animSeq = animSeq.ConvertAdditive(skeleton);
             AdjustSequenceBySkeleton(skeleton.ReferenceSkeleton, animSeq.RetargetBasePose ?? skeleton.ReferenceSkeleton.FinalRefBonePose, animSeq);
-            return !animSequence.IsValidAdditive() ? animSeq : animSeq.ConvertAdditive(skeleton);
+            return animSeq;
         }
 
         private static CAnimSequence ConvertAdditive(this CAnimSequence animSeq, USkeleton skeleton)
