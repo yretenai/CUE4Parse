@@ -367,8 +367,8 @@ namespace CUE4Parse.GameTypes.FN.Assets.Exports
                 {
                     var templateRecord = kv.Value?.GetValue<FActorTemplateRecord>();
                     if (templateRecord is null) continue;
-                    
-                    var templateIndex = kv.Key.GetValue<int>();
+
+                    var templateIndex = kv.Key.GetPrimitiveValue<int>();
                     TemplateRecords[templateIndex] = templateRecord;
                     ActorData.Add(templateRecord.ReadActorData(Owner, SaveVersion));
                 }

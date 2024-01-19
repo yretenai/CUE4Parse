@@ -39,7 +39,13 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
         {
             return GetValue(typeof(T)) as T;
         }
-        
+
+        public T? GetPrimitiveValue<T>()
+        {
+            return (T?) GetValue(typeof(T));
+        }
+
+
         public object? GetValue(Type type)
         {
             var generic = GenericValue;
@@ -109,11 +115,6 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
                 default:
                     return null;
             }
-        }
-        
-        public T? GetValue<T>()
-        {
-            return (T?) GetValue(typeof(T));
         }
 
         public abstract override string ToString();
