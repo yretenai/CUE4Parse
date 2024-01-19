@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -540,6 +541,9 @@ public static class Program {
                                         }
                                     }
                                 } catch (Exception e) {
+                                    if (Debugger.IsAttached) {
+                                        throw;
+                                    }
                                     Log.Error(e, "Failed to convert UObject export #{Export}", exportIndex);
                                 }
                             }

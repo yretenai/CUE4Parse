@@ -62,6 +62,10 @@ namespace CUE4Parse.UE4.Pak
 #if DEBUG
                 Log.Debug($"{pakEntry.Name} is compressed with {pakEntry.CompressionMethod}");
 #endif
+                if (pakEntry.UncompressedSize > int.MaxValue) {
+                    throw new InvalidDataException($"Asset {pakEntry.Name} is too large ({pakEntry.UncompressedSize} bytes)");
+                }
+
                 var uncompressed = new byte[(int) pakEntry.UncompressedSize];
                 var uncompressedOff = 0;
                 foreach (var block in pakEntry.CompressionBlocks)
