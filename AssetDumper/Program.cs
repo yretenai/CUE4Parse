@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -97,6 +97,7 @@ public static class Program {
                     flags.MaterialFormat = existing.MaterialFormat;
                     flags.Platform = existing.Platform;
                     flags.Language = existing.Language;
+                    flags.SkipUMap = existing.SkipUMap;
                 }
             }
 
@@ -345,7 +346,7 @@ public static class Program {
                     }
 
                     case "uasset":
-                    case "umap": {
+                    case "umap" when !flags.SkipUMap: {
                         try {
                             var package = await Provider.LoadPackageAsync(path);
                             if (flags.SkipMapBuiltData) {

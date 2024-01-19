@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Textures;
@@ -54,6 +54,9 @@ public record Flags : CommandLineFlags {
 
     [Flag("no-unknown", Help = "Suppress unknown files from being saved", Category = "Export")]
     public bool NoUnknown { get; set; }
+
+    [Flag("skip-umap", Help = "Skip umaps", Category = "Export")]
+    public bool SkipUMap { get; set; }
 
     [Flag("dry", Help = "Only list files", Category = "Export")]
     public bool Dry { get; set; }
