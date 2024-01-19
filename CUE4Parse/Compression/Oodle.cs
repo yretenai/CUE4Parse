@@ -27,9 +27,9 @@ namespace CUE4Parse.Compression {
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                     if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
-                        yield return "*oo2core*linuxarm64.so";
+                        yield return "*oo2core*linuxarm64.so*";
                     } else {
-                        yield return "*oo2core*linux64.so";
+                        yield return "*oo2core*linux64.so*";
                     }
 
                     yield break;
@@ -37,10 +37,10 @@ namespace CUE4Parse.Compression {
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                     if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64) {
-                        yield return "*oo2core*macarm64.dylib";
+                        yield return "*oo2core*macarm64*.dylib";
                     }
 
-                    yield return "*oo2core*mac64.dylib";
+                    yield return "*oo2core*mac64*.dylib";
 
                     yield break;
                 }
