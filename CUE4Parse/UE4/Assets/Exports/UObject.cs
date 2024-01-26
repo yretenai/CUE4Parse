@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -260,58 +261,65 @@ namespace CUE4Parse.UE4.Assets.Exports
             }
         }
 
+        public static bool JsonPropertyOnly { get; set; } = false;
+
         protected internal virtual void WriteJson(JsonWriter writer, JsonSerializer serializer)
         {
             var package = Owner;
 
-            // export type
-            writer.WritePropertyName("Type");
-            writer.WriteValue(ExportType);
+            if (!JsonPropertyOnly) {
 
-            // object name
-            writer.WritePropertyName("Name"); // ctrl click depends on the name, we always need it
-            writer.WriteValue(Name);
+                // export type
+                writer.WritePropertyName("Type");
+                writer.WriteValue(ExportType);
 
-            // outer
-            if (Outer != null && Outer != package)
-            {
-                writer.WritePropertyName("Outer");
-                writer.WriteValue(Outer.Name); // TODO serialize the path too
-            }
+                // object name
+                writer.WritePropertyName("Name"); // ctrl click depends on the name, we always need it
+                writer.WriteValue(Name);
 
-            // class
-            if (Class != null)
-            {
-                writer.WritePropertyName("Class");
-                writer.WriteValue(Class.GetFullName());
-            }
+                // outer
+                if (Outer != null && Outer != package) {
+                    writer.WritePropertyName("Outer");
+                    writer.WriteValue(Outer.Name); // TODO serialize the path too
+                }
 
-            // super
-            if (Super != null)
-            {
-                writer.WritePropertyName("Super");
-                serializer.Serialize(writer, Super);
-            }
+                // class
+                if (Class != null) {
+                    writer.WritePropertyName("Class");
+                    writer.WriteValue(Class.GetFullName());
+                }
 
-            // template
-            if (Template != null)
-            {
-                writer.WritePropertyName("Template");
-                serializer.Serialize(writer, Template);
+                // super
+                if (Super != null) {
+                    writer.WritePropertyName("Super");
+                    serializer.Serialize(writer, Super);
+                }
+
+                // template
+                if (Template != null) {
+                    writer.WritePropertyName("Template");
+                    serializer.Serialize(writer, Template);
+                }
+
             }
 
             // export properties
             if (Properties.Count > 0)
             {
-                writer.WritePropertyName("Properties");
-                writer.WriteStartObject();
+                if (!JsonPropertyOnly) {
+                    writer.WritePropertyName("Properties");
+                    writer.WriteStartObject();
+                }
+
                 foreach (var property in Properties)
                 {
                     writer.WritePropertyName(property.Name.Text);
                     serializer.Serialize(writer, property.Tag);
                 }
 
-                writer.WriteEndObject();
+                if (!JsonPropertyOnly) {
+                    writer.WriteEndObject();
+                }
             }
         }
 

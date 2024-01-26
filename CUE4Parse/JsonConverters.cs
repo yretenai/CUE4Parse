@@ -596,10 +596,16 @@ public class NamePropertyConverter : JsonConverter<NameProperty>
     }
 }
 
-public class ObjectPropertyConverter : JsonConverter<ObjectProperty>
-{
+public class ObjectPropertyConverter : JsonConverter<ObjectProperty> {
+    public static bool WriteObject { get; set; } = false;
+
     public override void WriteJson(JsonWriter writer, ObjectProperty value, JsonSerializer serializer)
     {
+        if (WriteObject && value?.Value?.IsExport == true) {
+            serializer.Serialize(writer, value.Value.ResolvedObject?.Load());
+            return;
+        }
+
         serializer.Serialize(writer, value.Value);
     }
 
@@ -638,11 +644,14 @@ public class SetPropertyConverter : JsonConverter<SetProperty>
     }
 }
 
-public class MapPropertyConverter : JsonConverter<MapProperty>
-{
-    public override void WriteJson(JsonWriter writer, MapProperty value, JsonSerializer serializer)
-    {
-        serializer.Serialize(writer, value.Value);
+public class MapPropertyConverter : JsonConverter<MapProperty> {
+    public override void WriteJson(JsonWriter writer, MapProperty value, JsonSerializer serializer) {
+        writer.WriteStartObject();
+        foreach (var entry in value.Value.Properties) {
+            writer.WritePropertyName(entry.Key.GenericValue?.ToString() ?? "None");
+            serializer.Serialize(writer, entry.Value);
+        }
+        writer.WriteEndObject();
     }
 
     public override MapProperty ReadJson(JsonReader reader, Type objectType, MapProperty existingValue, bool hasExistingValue,
@@ -2604,6 +2613,19 @@ public class FSoftObjectPathConverter : JsonConverter<FSoftObjectPath>
 {
     public override void WriteJson(JsonWriter writer, FSoftObjectPath value, JsonSerializer serializer)
     {
+        if (string.IsNullOrEmpty(value.SubPathString)) {
+            var ext = System.IO.Path.GetExtension(value.AssetPathName.Text);
+            var cur = System.IO.Path.GetFileNameWithoutExtension(value.AssetPathName.Text);
+            var cur2 = System.IO.Path.GetFileNameWithoutExtension(value.AssetPathName.Text) + "_C";
+            if (ext.Length > 1 && (cur == ext[1..] || cur2 == ext[1..])) {
+                writer.WriteValue(System.IO.Path.ChangeExtension(value.AssetPathName.Text, null));
+                return;
+            }
+
+            serializer.Serialize(writer, value.AssetPathName);
+            return;
+        }
+
         /*var path = value.ToString();
         writer.WriteValue(path.Length > 0 ? path : "None");*/
         writer.WriteStartObject();
@@ -2670,30 +2692,7 @@ public class ResolvedObjectConverter : JsonConverter<ResolvedObject>
 {
     public override void WriteJson(JsonWriter writer, ResolvedObject value, JsonSerializer serializer)
     {
-        var top = value;
-        ResolvedObject outerMost;
-        while (true)
-        {
-            var outer = top.Outer;
-            if (outer == null)
-            {
-                outerMost = top;
-                break;
-            }
-
-            top = outer;
-        }
-
-        writer.WriteStartObject();
-
-        writer.WritePropertyName("ObjectName"); // 1:2:3 if we are talking about an export in the current asset
-        writer.WriteValue(value.GetFullName(false));
-
-        writer.WritePropertyName("ObjectPath"); // package path . export index
-        var outerMostName = outerMost.Name.Text;
-        writer.WriteValue(value.ExportIndex != -1 ? $"{outerMostName}.{value.ExportIndex}" : outerMostName);
-
-        writer.WriteEndObject();
+        writer.WriteValue(value.GetFullName());
     }
 
     public override ResolvedObject ReadJson(JsonReader reader, Type objectType, ResolvedObject existingValue, bool hasExistingValue,

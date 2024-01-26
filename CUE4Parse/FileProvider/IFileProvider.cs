@@ -157,22 +157,25 @@ namespace CUE4Parse.FileProvider
         /// Can throw various exceptions
         /// </summary>
         /// <param name="path">The package file path</param>
+        /// <param name="loadBulk">Whether or not to load bulk data</param>
         /// <returns>The parsed package content</returns>
-        public IPackage LoadPackage(string path);
+        public IPackage LoadPackage(string path, bool loadBulk = true);
         /// <summary>
         /// Loads and parses a Package from the passed file.
         /// Can throw various exceptions
         /// </summary>
         /// <param name="file">The package file</param>
+        /// <param name="loadBulk">Whether or not to load bulk data</param>
         /// <returns>The parsed package content</returns>
-        public IPackage LoadPackage(GameFile file);
+        public IPackage LoadPackage(GameFile file, bool loadBulk = true);
         /// <summary>
         /// Loads and parses an I/O Store Package from the passed package ID.
         /// Can throw various exceptions
         /// </summary>
         /// <param name="id">The package ID</param>
+        /// <param name="loadBulk">Whether or not to load bulk data</param>
         /// <returns>The parsed package content</returns>
-        public IoPackage LoadPackage(FPackageId id);
+        public IoPackage LoadPackage(FPackageId id, bool loadBulk = true);
         /// <summary>
         /// Attempts to loads and parse a Package at the passed path.
         /// </summary>
@@ -199,15 +202,17 @@ namespace CUE4Parse.FileProvider
         /// Can throw various exceptions
         /// </summary>
         /// <param name="path">The package file path</param>
+        /// <param name="loadBulk">Whether or not to load bulk data</param>
         /// <returns>The parsed package content</returns>
-        public Task<IPackage> LoadPackageAsync(string path);
+        public Task<IPackage> LoadPackageAsync(string path, bool loadBulk = true);
         /// <summary>
         /// Asynchronously loads and parses a Package from the passed file.
         /// Can throw various exceptions
         /// </summary>
         /// <param name="file">The package file</param>
+        /// <param name="loadBulk">Whether or not to load bulk data</param>
         /// <returns>The parsed package content</returns>
-        public Task<IPackage> LoadPackageAsync(GameFile file);
+        public Task<IPackage> LoadPackageAsync(GameFile file, bool loadBulk = true);
         /// <summary>
         /// Asynchronously attempts to loads and parse a Package at the passed path.
         /// </summary>

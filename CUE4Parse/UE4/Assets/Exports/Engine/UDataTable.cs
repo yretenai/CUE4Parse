@@ -10,7 +10,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Engine
     public class UDataTable : UObject
     {
         public Dictionary<FName, FStructFallback> RowMap { get; private set; }
-        protected string? RowStructName { get; set; } // Only used if set from inheritor
+        public string? RowStructName { get; set; } // Only used if set from inheritor
 
         public override void Deserialize(FAssetArchive Ar, long validPos)
         {

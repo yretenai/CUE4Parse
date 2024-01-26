@@ -18,7 +18,7 @@ namespace CUE4Parse.UE4.Assets
     public abstract class AbstractUePackage : UObject, IPackage
     {
         public static HashSet<string> SkipClasses = new HashSet<string>();
-        
+
         public IFileProvider? Provider { get; }
         public TypeMappings? Mappings { get; }
         public abstract FPackageFileSummary Summary { get; }
@@ -69,18 +69,18 @@ namespace CUE4Parse.UE4.Assets
                 if(SkipClasses.Contains(obj.ExportType)) {
                     return;
                 }
-                
+
                 obj.Deserialize(Ar, validPos);
 #if DEBUG
                 var remaining = validPos - Ar.Position;
                 switch (remaining)
                 {
                     case > 0:
-                        Log.Warning("Did not read {0} correctly, {1} bytes remaining ({2}%)", obj.ExportType, remaining,
-                            Math.Round((decimal)remaining / validPos * 100, 2));
+                        Log.Debug("Did not read {0} correctly, {1} bytes remaining ({2}%)", obj.ExportType, remaining,
+                                  Math.Round((decimal)remaining / validPos * 100, 2));
                         break;
                     case < 0:
-                        Log.Warning("Did not read {0} correctly, {1} bytes exceeded", obj.ExportType, Math.Abs(remaining));
+                        Log.Debug("Did not read {0} correctly, {1} bytes exceeded", obj.ExportType, Math.Abs(remaining));
                         break;
                     default:
                         Log.Debug("Successfully read {0} at {1} with size {2}", obj.ExportType, serialOffset, serialSize);

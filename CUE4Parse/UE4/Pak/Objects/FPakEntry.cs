@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.CompilerServices;
 using CUE4Parse.Compression;
 using CUE4Parse.Encryption.Aes;
@@ -327,7 +328,16 @@ namespace CUE4Parse.UE4.Pak.Objects
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override byte[] Read() => Vfs.Extract(this);
 
+        public Stream ReadAsStream() => Vfs.AsStream(this);
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override FArchive CreateReader() => new FByteArchive(Path, Read(), Vfs.Versions);
+        public override FArchive CreateReader() {
+            if (UncompressedSize > int.MaxValue) {
+                return new FStreamArchive(Path, ReadAsStream(), Vfs.Versions);
+            }
+
+            return new FByteArchive(Path, Read(), Vfs.Versions);
+        }
     }
 }

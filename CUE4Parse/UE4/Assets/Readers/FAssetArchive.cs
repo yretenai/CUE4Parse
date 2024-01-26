@@ -95,7 +95,7 @@ namespace CUE4Parse.UE4.Assets.Readers
             return true;
         }
 
-        public FAssetArchive GetPayload(PayloadType type)
+        public FAssetArchive GetPayloadGetPayload(PayloadType type)
         {
             _payloads.TryGetValue(type, out var ret);
             var reader = ret?.Value;

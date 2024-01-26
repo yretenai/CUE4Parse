@@ -35,6 +35,7 @@ namespace CUE4Parse.UE4.Assets.Objects
             StructType = structName switch
             {
                 "Box" => type == ReadType.ZERO ? new FBox() : new FBox(Ar),
+                "Box2f" => type == ReadType.ZERO ? new FBox2f() : new FBox2f(Ar),
                 "Box2D" => type == ReadType.ZERO ? new FBox2D() : new FBox2D(Ar),
                 "Color" => type == ReadType.ZERO ? new FColor() : Ar.Read<FColor>(),
                 "ColorMaterialInput" => type == ReadType.ZERO ? new FMaterialInput<FColor>() : new FMaterialInput<FColor>(Ar),

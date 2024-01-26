@@ -95,6 +95,42 @@ namespace CUE4Parse.UE4.Pak
             return size != pakEntry.UncompressedSize ? data.SubByteArray((int) pakEntry.UncompressedSize) : data;
         }
 
+
+        public override Stream AsStream(VfsEntry entry)
+        {
+            if (entry is not FPakEntry pakEntry || entry.Vfs != this) throw new ArgumentException($"Wrong pak file reader, required {entry.Vfs.Name}, this is {Name}");
+            // If this reader is used as a concurrent reader create a clone of the main reader to provide thread safety
+            var reader = IsConcurrent ? (FArchive) Ar.Clone() : Ar;
+            if (!pakEntry.IsCompressed) {
+                return base.AsStream(pakEntry);
+            }
+
+        #if DEBUG
+            Log.Debug($"{pakEntry.Name} is compressed with {pakEntry.CompressionMethod}");
+        #endif
+
+            var uncompressed = new TempStream();
+            var uncompressedOff = 0;
+            var blockBuffer = new byte[(int) pakEntry.CompressionBlockSize];
+            foreach (var block in pakEntry.CompressionBlocks)
+            {
+                reader.Position = block.CompressedStart;
+                var blockSize = (int) block.Size;
+                var srcSize = blockSize.Align(pakEntry.IsEncrypted ? Aes.ALIGN : 1);
+                // Read the compressed block
+                byte[] compressed = ReadAndDecrypt(srcSize, reader, pakEntry.IsEncrypted);
+                // Calculate the uncompressed size,
+                // its either just the compression block size
+                // or if its the last block its the remaining data size
+                var uncompressedSize = (int) Math.Min(pakEntry.CompressionBlockSize, pakEntry.UncompressedSize - uncompressedOff);
+                Decompress(compressed, 0, blockSize, blockBuffer, 0, uncompressedSize, pakEntry.CompressionMethod);
+                uncompressed.Write(blockBuffer[..uncompressedSize]);
+                uncompressedOff += (int) pakEntry.CompressionBlockSize;
+            }
+
+            return uncompressed;
+        }
+
         public override IReadOnlyDictionary<string, GameFile> Mount(bool caseInsensitive = false)
         {
             var watch = new Stopwatch();

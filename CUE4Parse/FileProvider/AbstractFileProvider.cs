@@ -500,13 +500,13 @@ namespace CUE4Parse.FileProvider
         #region LoadPackage Methods
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual IPackage LoadPackage(string path) => LoadPackage(this[path]);
+        public virtual IPackage LoadPackage(string path, bool loadBulk = true) => LoadPackage(this[path], loadBulk);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual IPackage LoadPackage(GameFile file) => LoadPackageAsync(file).Result;
+        public virtual IPackage LoadPackage(GameFile file, bool loadBulk = true) => LoadPackageAsync(file, loadBulk).Result;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual IoPackage LoadPackage(FPackageId id) => (IoPackage) LoadPackage(FilesById[id]);
+        public virtual IoPackage LoadPackage(FPackageId id, bool loadBulk = true) => (IoPackage) LoadPackage(FilesById[id], loadBulk);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual bool TryLoadPackage(string path, out IPackage package)
@@ -541,21 +541,26 @@ namespace CUE4Parse.FileProvider
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual async Task<IPackage> LoadPackageAsync(string path) => await LoadPackageAsync(this[path]);
-        public virtual async Task<IPackage> LoadPackageAsync(GameFile file)
+        public virtual async Task<IPackage> LoadPackageAsync(string path, bool loadBulk = true) => await LoadPackageAsync(this[path], loadBulk);
+        public virtual async Task<IPackage> LoadPackageAsync(GameFile file, bool loadBulk = true)
         {
             if (!file.IsUE4Package) throw new ArgumentException("File must be a package to be a loaded as one", nameof(file));
             Files.TryGetValue(file.PathWithoutExtension + ".uexp", out var uexpFile);
-            Files.TryGetValue(file.PathWithoutExtension + ".ubulk", out var ubulkFile);
-            Files.TryGetValue(file.PathWithoutExtension + ".uptnl", out var uptnlFile);
+            FArchive? ubulk = null;
+            FArchive? uptnl = null;
+            if (loadBulk) {
+                Files.TryGetValue(file.PathWithoutExtension + ".ubulk", out var ubulkFile);
+                Files.TryGetValue(file.PathWithoutExtension + ".uptnl", out var uptnlFile);
+                var ubulkTask = ubulkFile?.CreateReaderAsync();
+                var uptnlTask = uptnlFile?.CreateReaderAsync();
+                ubulk = ubulkTask != null ? await ubulkTask : null;
+                uptnl = uptnlTask != null ? await uptnlTask : null;
+            }
+
             var uassetTask = file.CreateReaderAsync();
             var uexpTask = uexpFile?.CreateReaderAsync();
-            var ubulkTask = ubulkFile?.CreateReaderAsync();
-            var uptnlTask = uptnlFile?.CreateReaderAsync();
             var uasset = await uassetTask;
             var uexp = uexpTask != null ? await uexpTask : null;
-            var ubulk = ubulkTask != null ? await ubulkTask : null;
-            var uptnl = uptnlTask != null ? await uptnlTask : null;
 
             if (file is FPakEntry or OsGameFile)
             {
@@ -753,7 +758,7 @@ namespace CUE4Parse.FileProvider
             }
 
             var pkg = await LoadPackageAsync(packagePath);
-            return pkg.GetExport(objectName, IsCaseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+            return pkg.GetExport(objectName, StringComparison.OrdinalIgnoreCase);
         }
 
         public virtual async Task<UObject?> TryLoadObjectAsync(string? objectPath)
@@ -787,7 +792,7 @@ namespace CUE4Parse.FileProvider
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual IEnumerable<UObject> LoadAllObjects(string? packagePath) => LoadAllObjectsAsync(packagePath).Result;
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual async Task<IEnumerable<UObject>> LoadAllObjectsAsync(string? packagePath)
         {

@@ -95,5 +95,9 @@ namespace CUE4Parse.UE4.VirtualFileSystem
 
         public override string ToString() => Path;
         public abstract void Dispose();
+
+        public virtual Stream AsStream(VfsEntry entry) {
+            return Stream.Null;
+        }
     }
 }

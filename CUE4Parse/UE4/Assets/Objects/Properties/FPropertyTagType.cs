@@ -110,9 +110,18 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
                     var values = type.GetEnumNames();
                     var idx = Array.FindIndex(values, it => it == search);
                     return idx == -1 ? null : type.GetEnumValues().GetValue(idx);
+                case EnumProperty enumProp when type == typeof(string):
+                    return enumProp.Value.PlainText;
+                case NameProperty nameProp when type == typeof(string):
+                    return nameProp.Value.PlainText;
                 //TODO There are also Enums stored as ByteProperty but UModel uses them nowhere besides in UE2
                 //TODO Maybe Maps?
+                case FloatProperty floatProperty when type == typeof(double):
+                    return (double) floatProperty.Value;
+                case DoubleProperty doubleProperty when type == typeof(float):
+                    return (float) doubleProperty.Value;
                 default:
+                    Log.Error("Cannot convert {Type} to {Type2}", this.GetType().FullName, type.FullName);
                     return null;
             }
         }
