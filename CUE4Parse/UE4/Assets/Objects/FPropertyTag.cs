@@ -42,6 +42,11 @@ namespace CUE4Parse.UE4.Assets.Objects
             Size = (int) (Ar.Position - pos);
         }
 
+        public FPropertyTag(string name, FPropertyTagType type) {
+            Name = name;
+            Tag = type;
+        }
+
         public FPropertyTag(FAssetArchive Ar, bool readData)
         {
             Name = Ar.ReadFName();
