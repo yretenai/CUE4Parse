@@ -54,6 +54,8 @@ namespace CUE4Parse_Conversion.Materials
             File.WriteAllText(savedFilePath, JsonConvert.SerializeObject(_materialData, Formatting.Indented));
             label = Path.GetFileName(savedFilePath);
 
+            if (!Options.ExportTextures) return true;
+
             Parallel.ForEach(_materialData.Parameters.Textures.Values, texture =>
             {
                 if (texture is not UTexture2D t || t.Decode(Options.Platform) is not { } bitmap) return;

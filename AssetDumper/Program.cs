@@ -230,7 +230,8 @@ public static class Program {
             Platform = flags.Platform,
             SocketFormat = flags.SocketFormat,
             LodFormat = flags.LodFormat,
-            ExportMaterials = true,
+            ExportMaterials = false,
+            ExportTextures = false,
             ExportMorphTargets = true,
         };
 

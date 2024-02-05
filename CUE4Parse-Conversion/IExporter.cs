@@ -27,6 +27,7 @@ namespace CUE4Parse_Conversion
         public ESocketFormat SocketFormat;
         public bool ExportMorphTargets;
         public bool ExportMaterials;
+        public bool ExportTextures;
 
         public ExporterOptions()
         {
@@ -40,6 +41,7 @@ namespace CUE4Parse_Conversion
             SocketFormat = ESocketFormat.Bone;
             ExportMorphTargets = true;
             ExportMaterials = true;
+            ExportTextures = true;
         }
     }
 
