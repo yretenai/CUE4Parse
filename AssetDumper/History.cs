@@ -80,7 +80,7 @@ public class History {
             HistoryChecksumType.DJB2a => DJB2.CreateAlternate(),
             HistoryChecksumType.FNV1 => FNV.Create(FNV32Basis.FNV1),
             HistoryChecksumType.FNV1a => FNV.CreateInverse(FNV32Basis.FNV1),
-            _ => HashAlgorithm
+            _ => throw new NotSupportedException()
         };
 
         ReadOnly = false;
