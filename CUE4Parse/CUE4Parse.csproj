@@ -55,7 +55,7 @@
       <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
       <Output TaskParameter="ExitCode" PropertyName="CMakeExitCode" />
     </Exec>
-    <Exec Condition=" '$(CMakeExitCode)' == '0' " Command="cmake --build . --config $(Configuration) --target install" ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)">
+    <Exec Condition=" '$(CMakeExitCode)' == '0' " Command="cmake --build . --config $(Configuration)" ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)">
       <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
       <Output TaskParameter="ExitCode" PropertyName="CMakeExitCode" />
     </Exec>
