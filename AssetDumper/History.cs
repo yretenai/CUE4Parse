@@ -54,13 +54,14 @@ public enum HistoryVersion : byte {
     Latest = AddedOptionsAndUptnl
 }
 
+public enum HistoryType {
+    Undetermined = -1,
+    Same = 0,
+    New = 1,
+    Updated = 2,
+}
+
 public class History {
-    public enum HistoryType {
-        Undetermined,
-        Same,
-        New,
-        Updated,
-    }
     
     private readonly HashAlgorithm? HashAlgorithm;
     private readonly bool ReadOnly;

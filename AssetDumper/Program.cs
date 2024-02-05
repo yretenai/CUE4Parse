@@ -208,7 +208,7 @@ public static class Program {
         foreach (var (path, gameFile) in files) {
             var pc = ++processed / count * 100;
 
-            var historyType = History.HistoryType.New;
+            var historyType = HistoryType.New;
             if (flags.StubHistory == false && oldHistory != null && history != null) {
                 var historyEntry = await history.Add(Provider, gameFile);
                 historyType = oldHistory.Has(history, historyEntry);
@@ -233,7 +233,7 @@ public static class Program {
                 continue;
             }
 
-            if (historyType == History.HistoryType.Same) {
+            if (historyType == HistoryType.Same) {
                 continue;
             }
 
