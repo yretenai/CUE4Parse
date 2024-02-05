@@ -19,7 +19,7 @@ namespace CUE4Parse_Conversion.Meshes
     {
         public readonly List<Mesh> MeshLods;
 
-        public MeshExporter(USkeleton originalSkeleton, ExporterOptions options) : base(originalSkeleton, options)
+        public MeshExporter(USkeleton originalSkeleton, ExporterOptions options, string suffix) : base(originalSkeleton, options, suffix)
         {
             MeshLods = new List<Mesh>();
 
@@ -49,10 +49,10 @@ namespace CUE4Parse_Conversion.Meshes
                     throw new ArgumentOutOfRangeException(nameof(Options.MeshFormat), Options.MeshFormat, null);
             }
 
-            MeshLods.Add(new Mesh($"{PackagePath}.{ext}", Ar.GetBuffer(), new List<MaterialExporter2>()));
+            MeshLods.Add(new Mesh($"{PackagePath}{Suffix}.{ext}", Ar.GetBuffer(), new List<MaterialExporter2>()));
         }
 
-        public MeshExporter(UStaticMesh originalMesh, ExporterOptions options) : base(originalMesh, options)
+        public MeshExporter(UStaticMesh originalMesh, ExporterOptions options, string suffix) : base(originalMesh, options, suffix)
         {
             MeshLods = new List<Mesh>();
 
@@ -99,17 +99,17 @@ namespace CUE4Parse_Conversion.Meshes
 
                 if (Options.LodFormat == ELodFormat.FirstLod)
                 {
-                    MeshLods.Add(new Mesh($"{PackagePath}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
+                    MeshLods.Add(new Mesh($"{PackagePath}{Suffix}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
                     break;
                 }
                 else
                 {
-                    MeshLods.Add(new Mesh($"{PackagePath}_LOD{i}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
+                    MeshLods.Add(new Mesh($"{PackagePath}{Suffix}.lod{i}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
                 }
             }
         }
 
-        public MeshExporter(USkeletalMesh originalMesh, ExporterOptions options) : base(originalMesh, options)
+        public MeshExporter(USkeletalMesh originalMesh, ExporterOptions options, string suffix) : base(originalMesh, options, suffix)
         {
             MeshLods = new List<Mesh>();
 

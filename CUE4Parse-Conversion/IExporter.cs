@@ -54,20 +54,23 @@ namespace CUE4Parse_Conversion
     {
         protected readonly string PackagePath;
         protected readonly string ExportName;
+        protected readonly string Suffix;
         public ExporterOptions Options;
 
         protected ExporterBase()
         {
             PackagePath = string.Empty;
             ExportName = string.Empty;
+            Suffix = string.Empty;
             Options = new ExporterOptions();
         }
 
-        protected ExporterBase(UObject export, ExporterOptions options)
+        protected ExporterBase(UObject export, ExporterOptions options, string? suffix = null)
         {
             var p = export.GetPathName();
             PackagePath = p.SubstringBeforeLast('.');
             ExportName = p.SubstringAfterLast('.');
+            Suffix = suffix ?? string.Empty;
             Options = options;
         }
 
@@ -97,9 +100,9 @@ namespace CUE4Parse_Conversion
                 UAnimMontage animMontage => new AnimExporter(animMontage, options),
                 UAnimComposite animComposite => new AnimExporter(animComposite, options),
                 UMaterialInterface material => new MaterialExporter2(material, options),
-                USkeletalMesh skeletalMesh => new MeshExporter(skeletalMesh, options),
-                USkeleton skeleton => new MeshExporter(skeleton, options),
-                UStaticMesh staticMesh => new MeshExporter(staticMesh, options),
+                USkeletalMesh skeletalMesh => new MeshExporter(skeletalMesh, options, string.Empty),
+                USkeleton skeleton => new MeshExporter(skeleton, options, string.Empty),
+                UStaticMesh staticMesh => new MeshExporter(staticMesh, options, string.Empty),
                 _ => throw new NotSupportedException($"export of '{export.GetType()}' is not supported yet.")
             };
         }

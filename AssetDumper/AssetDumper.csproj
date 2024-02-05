@@ -10,6 +10,13 @@
     <ItemGroup>
       <ProjectReference Include="..\CUE4Parse-Conversion\CUE4Parse-Conversion.csproj" />
       <ProjectReference Include="..\CUE4Parse\CUE4Parse.csproj" />
+      <ProjectReference Include="..\DragonLib\DragonLib\DragonLib.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AssetRipper.TextureDecoder" Version="2.1.1" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+      <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     </ItemGroup>
 
 </Project>

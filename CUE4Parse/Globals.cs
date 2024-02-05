@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CUE4Parse
 {
@@ -9,5 +10,6 @@ namespace CUE4Parse
         public static bool LogVfsMounts = true;
         public static bool FatalObjectSerializationErrors = false;
         public static bool WarnMissingImportPackage = true;
+        public static HashSet<string> SkipObjectClasses = [];
     }
 }

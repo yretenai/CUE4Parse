@@ -64,6 +64,10 @@ namespace CUE4Parse.UE4.Assets
             var validPos = serialOffset + serialSize;
             try
             {
+                if(Globals.SkipObjectClasses.Contains(obj.ExportType)) {
+                    return;
+                }
+                
                 obj.Deserialize(Ar, validPos);
 #if DEBUG
                 var remaining = validPos - Ar.Position;
