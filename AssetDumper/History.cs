@@ -95,7 +95,10 @@ public class History {
 
         using var stream = File.OpenRead(path);
         var header = new HistoryHeader();
-        stream.ReadExactly(new Span<HistoryHeader>(ref header).AsBytes());
+        if (stream.Read(new Span<HistoryHeader>(ref header).AsBytes()) < 5) {
+            Options = HistoryOptions.Default;
+            return;
+        }
 
         var entrySize = Unsafe.SizeOf<HistoryEntryHeader>();
         switch (header.Version) {
@@ -105,6 +108,13 @@ public class History {
                 entrySize = Unsafe.SizeOf<HistoryEntryHeaderV1>();
                 header = header with { ChecksumType = HistoryChecksumType.CRC32C, Flags = HistoryFlags.HashExport | HistoryFlags.HashBulk | HistoryFlags.HashOptional };
                 stream.Position = 5;
+                break;
+            default:
+                if (stream.Position != Unsafe.SizeOf<HistoryHeader>()) {
+                    Options = HistoryOptions.Default;
+                    return;
+                }
+
                 break;
         }
 
