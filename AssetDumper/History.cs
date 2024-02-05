@@ -1,33 +1,86 @@
 using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using CUE4Parse.FileProvider;
 using CUE4Parse.FileProvider.Objects;
 using CUE4Parse.FileProvider.Vfs;
+using DragonLib;
 using DragonLib.Hash;
 using DragonLib.Hash.Algorithms;
 using DragonLib.Hash.Basis;
 
 namespace AssetDumper;
 
+public readonly record struct HistoryOptions {
+    public bool HashExport { get; init; }
+    public bool HashBulk { get; init; }
+    public bool HashOptional { get; init; }
+    public HistoryChecksumType ChecksumType { get; init; }
+
+    public HistoryFlags Flags => (HashExport ? HistoryFlags.HashExport : 0) |
+                                 (HashBulk ? HistoryFlags.HashBulk : 0) |
+                                 (HashOptional ? HistoryFlags.HashOptional : 0);
+
+    public static HistoryOptions Default { get; } = new() {
+        HashExport = true,
+        HashBulk = true,
+        HashOptional = true,
+        ChecksumType = HistoryChecksumType.CRC32C
+    };
+}
+
+[Flags]
+public enum HistoryFlags {
+    HashExport = 1 << 1,
+    HashBulk = 1 << 2,
+    HashOptional = 1 << 3
+};
+
+public enum HistoryChecksumType {
+    CRC32C = 0,
+    DJB2 = 1,
+    DJB2a = 2,
+    FNV1 = 3,
+    FNV1a = 4
+}
+
+public enum HistoryVersion : byte {
+    InvalidVersion = 0,
+    InitialVersion = 1,
+    AddedOptionsAndUptnl = 2,
+    
+    Latest = AddedOptionsAndUptnl
+}
+
 public class History {
     public enum HistoryType {
+        Undetermined,
         Same,
         New,
         Updated,
     }
-
+    
     private readonly HashAlgorithm? HashAlgorithm;
     private readonly bool ReadOnly;
 
-    public Dictionary<string, HistoryEntry> Entries = new();
+    private readonly Dictionary<string, HistoryEntry> Entries = new();
 
-    public History() {
-        if (CRC32CAlgorithm.IsSupported) {
-            HashAlgorithm = CRC32CAlgorithm.Create();
-        } else {
-            HashAlgorithm = CRC.Create(CRC32Variants.Castagnoli);
-        }
+    public HistoryOptions Options { get; }
+    
+    public History(HistoryOptions options) {
+        Options = options;
+
+        HashAlgorithm = options.ChecksumType switch {
+            HistoryChecksumType.CRC32C when CRC32CAlgorithm.IsSupported => CRC32CAlgorithm.Create(),
+            HistoryChecksumType.CRC32C => CRC.Create(CRC32Variants.Castagnoli),
+            HistoryChecksumType.DJB2 => DJB2.Create(),
+            HistoryChecksumType.DJB2a => DJB2.CreateAlternate(),
+            HistoryChecksumType.FNV1 => FNV.Create(FNV32Basis.FNV1),
+            HistoryChecksumType.FNV1a => FNV.CreateInverse(FNV32Basis.FNV1),
+            _ => HashAlgorithm
+        };
 
         ReadOnly = false;
     }
@@ -39,39 +92,42 @@ public class History {
         }
 
         using var stream = File.OpenRead(path);
-        Span<byte> header = stackalloc byte[5];
-        if (stream.Read(header) != 5) {
-            throw new InvalidDataException();
+        var header = new HistoryHeader();
+        stream.ReadExactly(new Span<HistoryHeader>(ref header).AsBytes());
+
+        var entrySize = Unsafe.SizeOf<HistoryEntryHeader>();
+        switch (header.Version) {
+            case > HistoryVersion.Latest or <= HistoryVersion.InvalidVersion:
+                throw new NotSupportedException();
+            case HistoryVersion.InitialVersion:
+                entrySize = Unsafe.SizeOf<HistoryEntryHeaderV1>();
+                header = header with { ChecksumType = HistoryChecksumType.CRC32C, Flags = HistoryFlags.HashExport | HistoryFlags.HashBulk | HistoryFlags.HashOptional };
+                stream.Position = 5;
+                break;
         }
 
-        var version = header[0];
-        if (version > 1) {
-            throw new NotSupportedException();
-        }
+        Options = new HistoryOptions {
+            HashExport = header.Flags.HasFlag(HistoryFlags.HashExport),
+            HashBulk = header.Flags.HasFlag(HistoryFlags.HashBulk),
+            HashOptional = header.Flags.HasFlag(HistoryFlags.HashOptional),
+            ChecksumType = header.ChecksumType
+        };
 
-        var count = BinaryPrimitives.ReadInt32LittleEndian(header[1..]);
-        Entries.EnsureCapacity(count);
-        Span<byte> entryBuffer = stackalloc byte[24];
-        for (var index = 0; index < count; index++) {
-            if (stream.Read(entryBuffer) != 24) {
-                throw new InvalidDataException();
-            }
+        Entries.EnsureCapacity(header.Count);
+        Span<byte> entryBuffer = stackalloc byte[entrySize];
+        for (var index = 0; index < header.Count; index++) {
+            stream.ReadExactly(entryBuffer.AsBytes());
 
-            var size = BinaryPrimitives.ReadInt64LittleEndian(entryBuffer);
-            var hash = BinaryPrimitives.ReadUInt32LittleEndian(entryBuffer[8..]);
-            var expHash = BinaryPrimitives.ReadUInt32LittleEndian(entryBuffer[12..]);
-            var bulkHash = BinaryPrimitives.ReadUInt32LittleEndian(entryBuffer[16..]);
-            var textLength = BinaryPrimitives.ReadInt32LittleEndian(entryBuffer[20..]);
-            var text = new byte[textLength].AsSpan();
-            if (stream.Read(text) != textLength) {
-                throw new InvalidDataException();
-            }
+            var entryHeader = header.Version switch {
+                HistoryVersion.InitialVersion => MemoryMarshal.Read<HistoryEntryHeaderV1>(entryBuffer).Upgrade(),
+                _ => MemoryMarshal.Read<HistoryEntryHeader>(entryBuffer)
+            };
+
+            var text = new byte[entryHeader.TextLength].AsSpan();
+            stream.ReadExactly(text);
 
             var entry = new HistoryEntry {
-                Size = size,
-                Hash = hash,
-                ExportHash = expHash,
-                BulkHash = bulkHash,
+                Header = entryHeader,
                 Path = Encoding.UTF8.GetString(text),
             };
             Entries[entry.Path] = entry;
@@ -80,19 +136,17 @@ public class History {
 
     public void Save(string path) {
         using var stream = File.OpenWrite(path);
-        Span<byte> header = stackalloc byte[5];
-        header[0] = 1;
-        BinaryPrimitives.WriteInt32LittleEndian(header[1..], Entries.Count);
-        stream.Write(header);
-        Span<byte> entryBuffer = stackalloc byte[24];
-        foreach (var entry in Entries.Values) {
-            BinaryPrimitives.WriteInt64LittleEndian(entryBuffer, entry.Size);
-            BinaryPrimitives.WriteUInt32LittleEndian(entryBuffer[8..], entry.Hash);
-            BinaryPrimitives.WriteUInt32LittleEndian(entryBuffer[12..], entry.ExportHash);
-            BinaryPrimitives.WriteUInt32LittleEndian(entryBuffer[16..], entry.BulkHash);
-            var text = Encoding.UTF8.GetBytes(entry.Path);
-            BinaryPrimitives.WriteInt32LittleEndian(entryBuffer[20..], text.Length);
-            stream.Write(entryBuffer);
+        var header = new HistoryHeader {
+            Version = HistoryVersion.Latest,
+            Count = Entries.Count,
+            ChecksumType = Options.ChecksumType,
+            Flags = Options.Flags
+        };
+        stream.Write(new Span<HistoryHeader>(ref header).AsBytes());
+        foreach (var _entry in Entries.Values) {
+            var text = Encoding.UTF8.GetBytes(_entry.Path);
+            var entry = _entry.Header with { TextLength = text.Length };
+            stream.Write(new Span<HistoryEntryHeader>(ref entry).AsBytes());
             stream.Write(text);
         }
     }
@@ -103,11 +157,14 @@ public class History {
         }
 
         var entry = new HistoryEntry {
-            Size = gameFile.Size,
+            Header = new HistoryEntryHeader {
+                Size = gameFile.Size,
+                Hash = await CalculateHashForFile(gameFile),
+                ExportHash = Options.HashExport ? await CalculateHashForFile(provider, gameFile.PathWithoutExtension + ".uexp") : uint.MaxValue,
+                BulkHash = Options.HashBulk ? await CalculateHashForFile(provider, gameFile.PathWithoutExtension + ".ubulk") : uint.MaxValue,
+                UptnlHash = Options.HashOptional ? await CalculateHashForFile(provider, gameFile.PathWithoutExtension + ".uptnl") : uint.MaxValue,
+            },
             Path = gameFile.Path,
-            Hash = await CalculateHashForFile(gameFile),
-            ExportHash = await CalculateHashForFile(provider, gameFile.PathWithoutExtension + ".uexp"),
-            BulkHash = await CalculateHashForFile(provider, gameFile.PathWithoutExtension + ".ubulk"),
         };
 
         Entries[entry.Path] = entry;
@@ -131,24 +188,70 @@ public class History {
         return !provider.TryFindGameFile(path, out var gameFile) ? 0 : await CalculateHashForFile(gameFile);
     }
 
-    public HistoryType Has(HistoryEntry entry) {
+    public HistoryType Has(History other, HistoryEntry entry) {
+        if (other.Options.ChecksumType != Options.ChecksumType) {
+            return HistoryType.Undetermined;
+        }
+        
         if (!Entries.TryGetValue(entry.Path, out var localEntry)) {
             return HistoryType.New;
         }
 
-        // don't compare ubulk for volatility.
-        if (localEntry.Hash != entry.Hash || localEntry.ExportHash != entry.ExportHash) {
+        // don't compare ubulk/uptnl for volatility.
+        var header = entry.Header;
+        var localHeader = localEntry.Header;
+        if (localHeader.Hash != header.Hash) {
+            return HistoryType.Updated;
+        }
+
+        if (Options.HashExport && other.Options.HashExport && localHeader.ExportHash != header.ExportHash) {
             return HistoryType.Updated;
         }
 
         return HistoryType.Same;
     }
 
-    public record struct HistoryEntry {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private readonly record struct HistoryHeader {
+        public HistoryVersion Version { get; init; }
+        public int Count { get; init; }
+        public HistoryChecksumType ChecksumType { get; init; }
+        public HistoryFlags Flags { get; init; }
+    }
+    
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private readonly record struct HistoryEntryHeaderV1 {
         public long Size { get; init; }
         public uint Hash { get; init; }
         public uint ExportHash { get; init; }
         public uint BulkHash { get; init; }
+        public int TextLength { get; init; }
+
+        public HistoryEntryHeader Upgrade() {
+            return new HistoryEntryHeader {
+                Size = Size,
+                Hash = Hash,
+                ExportHash = ExportHash,
+                BulkHash = BulkHash,
+                UptnlHash = uint.MaxValue,
+                TextLength = TextLength
+            };
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public record struct HistoryEntryHeader {
+        public long Size { get; init; }
+        public uint Hash { get; init; }
+        public uint ExportHash { get; init; }
+        public uint BulkHash { get; init; }
+        public uint UptnlHash { get; init; }
+        public int TextLength { get; init; }
+    }
+
+    public record struct HistoryEntry {
+        public HistoryEntryHeader Header { get; init; }
         public string Path { get; init; }
     }
 }

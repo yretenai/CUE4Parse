@@ -73,26 +73,26 @@ public record Flags : CommandLineFlags {
     [Flag("usmap", Help = "Unreal Engine Struct Mappings", Category = "CUE4Parse")]
     public string? Mappings { get; set; }
 
-    [Flag("aes", Aliases = new[] { "k", "key", "keys" }, Help = "AES key values for the packages", Category = "CUE4Parse")]
-    public List<string> Keys { get; set; } = new();
+    [Flag("aes", Aliases = ["k", "key", "keys"], Help = "AES key values for the packages", Category = "CUE4Parse")]
+    public List<string> Keys { get; set; } = [];
 
-    [Flag("guid", Aliases = new[] { "K" }, Help = "AES key guids for the packages", Category = "CUE4Parse")]
-    public List<string> KeyGuids { get; set; } = new();
+    [Flag("guid", Aliases = ["K"], Help = "AES key guids for the packages", Category = "CUE4Parse")]
+    public List<string> KeyGuids { get; set; } = [];
 
-    [Flag("game", Help = "Unreal Version to use", Category = "CUE4Parse", EnumPrefix = new[] { "GAME_" }, ReplaceDashes = '_', ReplaceDots = '_')]
-    public EGame Game { get; set; } = EGame.GAME_UE4_LATEST;
+    [Flag("game", Help = "Unreal Version to use", Category = "CUE4Parse", EnumPrefix = ["GAME_"], ReplaceDashes = '_', ReplaceDots = '_')]
+    public EGame Game { get; set; } = EGame.GAME_UE5_LATEST;
 
     [Flag("lod", Help = "LOD export format", Category = "CUE4Parse")]
     public ELodFormat LodFormat { get; set; } = ELodFormat.FirstLod;
 
     [Flag("mesh-format", Help = "Mesh format to export to", Category = "CUE4Parse")]
-    public EMeshFormat MeshFormat { get; set; } = EMeshFormat.ActorX;
+    public EMeshFormat MeshFormat { get; set; } = EMeshFormat.UEFormat;
 
     [Flag("texture-format", Help = "Texture format to export to", Category = "CUE4Parse")]
     public ETextureFormat TextureFormat { get; set; } = ETextureFormat.Png;
 
     [Flag("anim-format", Help = "Animation format to export to", Category = "CUE4Parse")]
-    public EAnimFormat AnimationFormat { get; set; } = EAnimFormat.ActorX;
+    public EAnimFormat AnimationFormat { get; set; } = EAnimFormat.UEFormat;
 
     [Flag("socket-format", Help = "Socket format to use", Category = "CUE4Parse")]
     public ESocketFormat SocketFormat { get; set; } = ESocketFormat.Socket;
@@ -103,23 +103,17 @@ public record Flags : CommandLineFlags {
     [Flag("platform", Help = "Platform of the game", Category = "CUE4Parse")]
     public ETexturePlatform Platform { get; set; } = ETexturePlatform.DesktopMobile;
 
-    [Flag("language", Help = "Langauge to load LocRes for", Category = "CUE4Parse")]
-    public ELanguage Language { get; set; } = ELanguage.English;
-
     [Flag("filter", Help = "Path filters", Category = "AssetDumper")]
-    public List<Regex> Filters { get; set; } = new();
+    public List<Regex> Filters { get; set; } = [];
 
-    [Flag("skip-class", Aliases = new[] { "e" }, Help = "Classes to skip", Category = "AssetDumper")]
-    public HashSet<string> SkipClasses { get; set; } = new();
+    [Flag("skip-class", Aliases = ["e"], Help = "Classes to skip", Category = "AssetDumper")]
+    public HashSet<string> SkipClasses { get; set; } = [];
 
-    [Flag("versions", Aliases = new[] { "V" }, Help = "Version Overrides", Category = "AssetDumper")]
-    public HashSet<string> Versions { get; set; } = new();
+    [Flag("versions", Aliases = ["V"], Help = "Version Overrides", Category = "AssetDumper")]
+    public HashSet<string> Versions { get; set; } = [];
 
-    [Flag("history-path", Aliases = new[] { "history" }, Help = "Path to the .history file for the previous version", Category = "AssetDumper")]
+    [Flag("history-path", Aliases = ["history"], Help = "Path to the .history file for the previous version", Category = "AssetDumper")]
     public string? HistoryPath { get; set; }
-
-    [Flag("history-name", Help = "This history's name", Category = "AssetDumper")]
-    public string? HistoryName { get; set; }
 
     [Flag("stub-history", Help = "Stub history comparison", Category = "AssetDumper")]
     public bool StubHistory { get; set; }
@@ -129,4 +123,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("pak-path", IsRequired = true, Positional = 0, Help = "Path to where the packages are", Category = "AssetDumper")]
     public string PakPath { get; set; } = null!;
+
+    [Flag("save-args", Help = "Save (or Load) Program Arguments", Category = "AssetDumper")]
+    public bool SaveArgs { get; set; }
 }

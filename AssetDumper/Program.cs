@@ -58,7 +58,7 @@ public static class Program {
         var targetBaseDir = new DirectoryInfo(target);
         targetBaseDir.Create();
 
-        if (!flags.Dry) {
+        if (flags is { Dry: false, SaveArgs: true }) {
             await using var assetDumperStream = new FileStream(Path.Combine(target, "CUE4AssetDumper.root"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             await using var assetDumperWriter = new StreamWriter(assetDumperStream, Encoding.UTF8, leaveOpen: true);
             using var assetDumperReader = new StreamReader(assetDumperStream, Encoding.UTF8, leaveOpen: true);
@@ -66,39 +66,11 @@ public static class Program {
             if (!Directory.Exists(flags.PakPath)) {
                 var existing = JsonConvert.DeserializeObject<Flags>(await assetDumperReader.ReadToEndAsync(), new StringEnumConverter());
                 if (existing is not null) {
-                    flags.PakPath = existing.PakPath;
-                    flags.Game = existing.Game;
-                    flags.Mappings = existing.Mappings;
-                    flags.NoJSON = existing.NoJSON;
-                    flags.NoMaterial = existing.NoMaterial;
-                    flags.NoTextures = existing.NoTextures;
-                    flags.NoSounds = existing.NoSounds;
-                    flags.NoMeshes = existing.NoMeshes;
-                    flags.NoWorlds = existing.NoWorlds;
-                    flags.NoAnimations = existing.NoAnimations;
-                    flags.NoDataTable = existing.NoDataTable;
-                    flags.NoStringTable = existing.NoStringTable;
-                    flags.NoUnknown = existing.NoUnknown;
-                    flags.TrackWwiseEvents = existing.TrackWwiseEvents;
-                    flags.RenameWwiseAudio = existing.RenameWwiseAudio;
-                    flags.SaveLocRes = existing.SaveLocRes;
-                    flags.SaveRaw = existing.SaveRaw;
-                    flags.Keys = existing.Keys;
-                    flags.KeyGuids = existing.KeyGuids;
-                    flags.Filters = existing.Filters;
-                    flags.SkipClasses = existing.SkipClasses;
-                    flags.LodFormat = existing.LodFormat;
-                    flags.MeshFormat = existing.MeshFormat;
-                    flags.TextureFormat = existing.TextureFormat;
-                    flags.AnimationFormat = existing.AnimationFormat;
-                    flags.SocketFormat = existing.SocketFormat;
-                    flags.MaterialFormat = existing.MaterialFormat;
-                    flags.Platform = existing.Platform;
-                    flags.Language = existing.Language;
-                    flags.SkipUMap = existing.SkipUMap;
-                    flags.Versions = existing.Versions;
+                    flags = existing;
                 }
             }
+
+            flags.Dry = false;
 
             assetDumperStream.SetLength(0);
 
@@ -184,8 +156,6 @@ public static class Program {
             }
         }
 
-        Provider.LoadLocalization(flags.Language);
-
         if (flags.SaveLocRes) {
             await File.WriteAllTextAsync(Path.Combine(target, "localization.json"), JsonConvert.SerializeObject(Provider.LocalizedResources, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
         }
@@ -197,9 +167,9 @@ public static class Program {
         History? history = null;
         History? oldHistory = null;
         if (!flags.StubHistory) {
-            history = new History();
             var targetHistoryPath = Path.Combine(target, Path.GetFileName(target) + ".history");
             oldHistory = new History(flags.HistoryPath ?? targetHistoryPath);
+            history = new History(oldHistory.Options);
         }
 
         var wwiseNames = new HashSet<string>();
@@ -207,7 +177,7 @@ public static class Program {
         var wemList = new List<string>();
 
         var filesEnumerable = Provider.Files.Where(x => x.Value is VfsEntry).DistinctBy(x => x.Key);
-        if (flags.Filters.Any()) {
+        if (flags.Filters.Count > 0) {
             filesEnumerable = filesEnumerable.Where(x => flags.Filters.Any(y => y.IsMatch(x.Key)));
         }
 
@@ -241,7 +211,7 @@ public static class Program {
             var historyType = History.HistoryType.New;
             if (flags.StubHistory == false && oldHistory != null && history != null) {
                 var historyEntry = await history.Add(Provider, gameFile);
-                historyType = oldHistory.Has(historyEntry);
+                historyType = oldHistory.Has(history, historyEntry);
             }
 
             if (gameFile is VfsEntry vfs) {
@@ -335,8 +305,7 @@ public static class Program {
                         }
 
                         var package = await Provider.LoadPackageAsync(path);
-                        var name = Provider.Versions.Game >= EGame.GAME_UE5_0 ? package.Name : Path.ChangeExtension(gameFile.Path, null);
-                        name = name.TrimStart('/', '\\');
+                        var name = package.Name.TrimStart('/', '\\');
                         targetJsonPath = Path.Combine(target, "Json", name + ".json");
                         if (Provider.TryCreateReader(path, out var archive)) {
                             targetJsonPath.EnsureDirectoryExists();
@@ -362,8 +331,7 @@ public static class Program {
                                 }
                             }
                             
-                            var name = Provider.Versions.Game >= EGame.GAME_UE5_0 ? package.Name : Path.ChangeExtension(gameFile.Path, null);
-                            name = name.TrimStart('/', '\\');
+                            var name = package.Name.TrimStart('/', '\\');
                             var targetPath = Path.Combine(target, name);
                             targetJsonPath = Path.Combine(target, "Json", name + ".json");
                             var exports = package.GetExports().ToArray();
