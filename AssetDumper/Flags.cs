@@ -124,6 +124,6 @@ public record Flags : CommandLineFlags {
     [Flag("pak-path", IsRequired = true, Positional = 0, Help = "Path to where the packages are", Category = "AssetDumper")]
     public string PakPath { get; set; } = null!;
 
-    [Flag("save-args", Help = "Save (or Load) Program Arguments", Category = "AssetDumper")]
-    public bool SaveArgs { get; set; }
+    [Flag("load-args", Help = "Load Program Arguments from Root File", Category = "AssetDumper")]
+    public bool LoadArgs { get; set; }
 }

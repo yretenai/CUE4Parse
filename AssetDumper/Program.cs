@@ -58,19 +58,20 @@ public static class Program {
         var targetBaseDir = new DirectoryInfo(target);
         targetBaseDir.Create();
 
-        if (flags is { Dry: false, SaveArgs: true }) {
+        if (!flags.Dry) {
             await using var assetDumperStream = new FileStream(Path.Combine(target, "CUE4AssetDumper.root"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             await using var assetDumperWriter = new StreamWriter(assetDumperStream, Encoding.UTF8, leaveOpen: true);
-            using var assetDumperReader = new StreamReader(assetDumperStream, Encoding.UTF8, leaveOpen: true);
 
-            if (!Directory.Exists(flags.PakPath)) {
+            if (flags.LoadArgs) {
+                using var assetDumperReader = new StreamReader(assetDumperStream, Encoding.UTF8, leaveOpen: true);
                 var existing = JsonConvert.DeserializeObject<Flags>(await assetDumperReader.ReadToEndAsync(), new StringEnumConverter());
                 if (existing is not null) {
                     flags = existing;
                 }
+                
+                flags.Dry = false;
             }
 
-            flags.Dry = false;
 
             assetDumperStream.SetLength(0);
 
