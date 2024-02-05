@@ -25,8 +25,8 @@ public readonly record struct HistoryOptions {
 
     public static HistoryOptions Default { get; } = new() {
         HashExport = true,
-        HashBulk = true,
-        HashOptional = true,
+        HashBulk = false,
+        HashOptional = false,
         ChecksumType = HistoryChecksumType.CRC32C
     };
 }
