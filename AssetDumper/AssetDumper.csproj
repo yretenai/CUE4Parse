@@ -17,6 +17,9 @@
       <PackageReference Include="AssetRipper.TextureDecoder" Version="2.1.1" />
       <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
       <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.7" />
+      <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="2.88.7" />
+      <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="2.88.7" />
     </ItemGroup>
 
 </Project>
