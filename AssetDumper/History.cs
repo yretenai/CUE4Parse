@@ -88,6 +88,7 @@ public class History {
     public History(string? path) {
         ReadOnly = true;
         if (!File.Exists(path)) {
+            Options = HistoryOptions.Default;
             return;
         }
 
