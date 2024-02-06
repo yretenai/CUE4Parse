@@ -14,6 +14,10 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
         {
             base.Deserialize(Ar, validPos);
 
+            if (Ar.Game == EGame.GAME_UE5_1) {
+                return;
+            }
+
             if (Ar.Owner?.Provider?.InternalGameName.ToUpper() == "FORTNITEGAME")
             {
                 var read = Ar.Read<uint>();
@@ -30,7 +34,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
                         break;
                 }
             }
-
+            
             var bCooked = false;
             if (FFortniteMainBranchObjectVersion.Get(Ar) >= FFortniteMainBranchObjectVersion.Type.SerializeInstancedStaticMeshRenderData ||
                 FEditorObjectVersion.Get(Ar) >= FEditorObjectVersion.Type.SerializeInstancedStaticMeshRenderData)

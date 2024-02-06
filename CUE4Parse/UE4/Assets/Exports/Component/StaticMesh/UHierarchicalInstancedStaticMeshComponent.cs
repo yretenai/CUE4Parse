@@ -14,6 +14,10 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
         {
             base.Deserialize(Ar, validPos);
 
+            if (Ar.Game == EGame.GAME_UE5_1) {
+                return;
+            }
+
             ClusterTree = FReleaseObjectVersion.Get(Ar) < FReleaseObjectVersion.Type.HISMCClusterTreeMigration ? Ar.ReadBulkArray(() => new FClusterNode_DEPRECATED(Ar)) : Ar.ReadBulkArray(() => new FClusterNode(Ar));
         }
 
