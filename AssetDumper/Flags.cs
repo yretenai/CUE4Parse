@@ -126,4 +126,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("load-args", Help = "Load Program Arguments from Root File", Category = "AssetDumper")]
     public bool LoadArgs { get; set; }
+    
+    [Flag("mapstruct", Help = "path to the Map Struct override json", Category = "AssetDumper")]
+    public string? MapStruct { get; set; }
 }

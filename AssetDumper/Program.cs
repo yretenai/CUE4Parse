@@ -83,12 +83,20 @@ public static class Program {
             .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Information)
             .CreateLogger();
 
-        var versions = new VersionContainer(flags.Game, flags.Platform);
+        var versionOverrides = new Dictionary<string, bool>();
         foreach (var version in flags.Versions) {
-            versions.Options[version] = false;
+            versionOverrides[version] = false;
         }
+
+        var mapOverrides = new Dictionary<string, KeyValuePair<string, string>>(); 
+        if (File.Exists(flags.MapStruct)) {
+            mapOverrides = JsonConvert.DeserializeObject<Dictionary<string, KeyValuePair<string, string>>>(await File.ReadAllTextAsync(flags.MapStruct));
+        }
+        
+        var versions = new VersionContainer(flags.Game, flags.Platform, optionOverrides: versionOverrides, mapStructTypesOverrides: mapOverrides);
         using var Provider = new DefaultFileProvider(Path.GetFullPath(flags.PakPath), SearchOption.AllDirectories, false, versions);
         Provider.UseLazySerialization = false;
+        
         flags.Mappings ??= Directory.GetFiles(flags.PakPath, "*.usmap", SearchOption.AllDirectories).SingleOrDefault();
         if (File.Exists(flags.Mappings)) {
             Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(flags.Mappings);
