@@ -19,20 +19,34 @@ public class WorldExporter : ExporterBase {
         WorldName = world.Owner?.Name ?? world.Name;
         WorldName += $".{exportIndex}";
 
-        var (actors, overrideMaterials, landscapes) = WorldConverter.ConvertWorld(world, platform);
+        var (actors, lights, overrideMaterials, landscapes) = WorldConverter.ConvertWorld(world, platform);
 
         using var Ar = new FArchiveWriter();
         Ar.SerializeChunkHeader(new VChunkHeader(), "WRLDHEAD");
 
         var actorsHdr = new VChunkHeader {
             DataCount = actors.Count,
-            DataSize = 368,
+            DataSize = 560,
         };
 
-        Ar.SerializeChunkHeader(actorsHdr, "WORLDACTORS");
+        Ar.SerializeChunkHeader(actorsHdr, "WORLDACTORS::2");
 
         foreach (var actor in actors) {
+            if (actor.Name is { Length: > 256 }) {
+                actor.Name = actor.Name[..256];
+            }
             actor.Serialize(Ar);
+        }
+
+        var lightsHdr = new VChunkHeader {
+            DataCount = lights.Count,
+            DataSize = 48,
+        };
+
+        Ar.SerializeChunkHeader(lightsHdr, "WORLDLIGHTS");
+
+        foreach (var light in lights) {
+            light.Serialize(Ar);
         }
 
         var overrideHdr = new VChunkHeader {

@@ -14,7 +14,7 @@ public class WorldActor {
     public FVector Scale;
 
     public void Serialize(FArchiveWriter Ar) {
-        Ar.Write(Name ?? "None", 64);
+        Ar.Write(Name ?? "None", 256);
         Ar.Write(AssetPath ?? "None", 256);
         Ar.Write(Parent);
         Position.Serialize(Ar);
