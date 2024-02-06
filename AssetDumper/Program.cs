@@ -84,12 +84,14 @@ public static class Program {
             .CreateLogger();
 
         var versionOverrides = new Dictionary<string, bool>();
-        foreach (var version in flags.Versions) {
-            versionOverrides[version] = false;
+        foreach (var kv in flags.Versions.Select(version => version.Split('=', 2, StringSplitOptions.TrimEntries))) {
+            versionOverrides[kv[0]] = bool.TryParse(kv[1], out var value) && value;
+            Log.Information("Setting {Key} to {Value}", kv[0], versionOverrides[kv[0]]);
         }
 
         var mapOverrides = new Dictionary<string, KeyValuePair<string, string>>(); 
         if (File.Exists(flags.MapStruct)) {
+            Log.Information("Loading MapStruct File {File}", flags.MapStruct);
             mapOverrides = JsonConvert.DeserializeObject<Dictionary<string, KeyValuePair<string, string>>>(await File.ReadAllTextAsync(flags.MapStruct));
         }
         
@@ -99,6 +101,7 @@ public static class Program {
         
         flags.Mappings ??= Directory.GetFiles(flags.PakPath, "*.usmap", SearchOption.AllDirectories).SingleOrDefault();
         if (File.Exists(flags.Mappings)) {
+            Log.Information("Loading Mappings File {File}", flags.Mappings);
             Provider.MappingsContainer = new FileUsmapTypeMappingsProvider(flags.Mappings);
         }
 
