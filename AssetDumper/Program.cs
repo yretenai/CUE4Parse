@@ -55,13 +55,18 @@ public static class Program {
 
         Oodle.LoadOodleDll(Environment.CurrentDirectory);
 
-        if (flags.Game == EGame.GAME_AUTODETECT) {
-            FindVersion(flags);
-        }
-
         var target = Path.GetFullPath(flags.OutputPath);
         var targetBaseDir = new DirectoryInfo(target);
         targetBaseDir.Create();
+
+        Log.Logger = new LoggerConfiguration()
+                    .WriteTo.Console()
+                    .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Error)
+                    .CreateLogger();
+
+        if (flags.Game == EGame.GAME_AUTODETECT) {
+            FindVersion(flags);
+        }
 
         if (!flags.Dry) {
             await using var assetDumperStream = new FileStream(Path.Combine(target, "CUE4AssetDumper.root"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
@@ -86,11 +91,6 @@ public static class Program {
                 }
             }));
         }
-
-        Log.Logger = new LoggerConfiguration()
-                    .WriteTo.Console()
-                    .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Error)
-                    .CreateLogger();
 
         var versionOverrides = new Dictionary<string, bool>();
         foreach (var kv in flags.Versions.Select(version => version.Split('=', 2, StringSplitOptions.TrimEntries))) {
@@ -168,8 +168,11 @@ public static class Program {
 
         Globals.SkipObjectClasses.UnionWith(flags.SkipClasses);
 
-        if (flags.SkipMapBuiltData) {
+        if (flags.SkipProblematicClasses) {
             Globals.SkipObjectClasses.Add("MapBuildDataRegistry");
+            Globals.SkipObjectClasses.Add("MovieSceneCompiledData");
+            Globals.SkipObjectClasses.Add("TimelineComponent");
+            Globals.SkipObjectClasses.Add("NiagaraScript");
         }
 
         foreach (var keyGuid in Provider.RequiredKeys) {
@@ -366,18 +369,6 @@ public static class Program {
                     case "umap" when !flags.SkipUMap: {
                         try {
                             var package = await Provider.LoadPackageAsync(path);
-                            if (flags.SkipMapBuiltData) {
-                                if (package is IoPackage ioPackage) {
-                                    if (ioPackage.ExportMap.Any(x => ioPackage.ResolveObjectIndex(x.ClassIndex)?.Class?.Name == "MapBuildDataRegistry")) {
-                                        break;
-                                    }
-                                } else if (package is Package ue4Package) {
-                                    if (ue4Package.ExportMap.Any(x => x.ClassIndex.ResolvedObject?.Class?.Name == "MapBuildDataRegistry")) {
-                                        break;
-                                    }
-                                }
-                            }
-
                             var name = package.Name.TrimStart('/', '\\');
                             var targetPath = Path.Combine(target, name);
                             targetJsonPath = Path.Combine(target, "Json", name + ".json");
@@ -618,7 +609,7 @@ public static class Program {
                 continue;
             }
 
-            version = (EGame) (((major - 3) << 24) + (minor << 4));
+            version = (EGame)(((major - 3) << 24) + minor << 4);
 
             return true;
         }
@@ -629,7 +620,10 @@ public static class Program {
     private static void FindVersion(Flags flags) {
         var utf8signature = Signature.CreateSignature("00 2B 2B 55 45");
         var utf16signature = Signature.CreateSignature("00 2B 00 2B 00 55 00 45 00");
-        foreach (var path in Directory.GetFiles(flags.PakPath)) {
+        foreach (var path in Directory.GetFiles(flags.PakPath, "*", SearchOption.AllDirectories)) {
+            if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory)) {
+                continue;
+            }
             var ext = Path.GetExtension(path).ToLower();
             if (!string.IsNullOrEmpty(ext) && ext != ".exe") {
                 continue;

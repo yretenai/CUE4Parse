@@ -22,8 +22,8 @@ public record Flags : CommandLineFlags {
     [Flag("locres", Help = "Saave localization data", Category = "Export")]
     public bool SaveLocRes { get; set; }
 
-    [Flag("skip-mapbuiltdata", Help = "Suppress Map BuiltData conversion", Category = "Export")]
-    public bool SkipMapBuiltData { get; set; }
+    [Flag("no-problematic", Help = "Suppress Problematic classes", Category = "Export")]
+    public bool SkipProblematicClasses { get; set; }
 
     [Flag("no-json", Help = "Suppress JSON generation", Category = "Export")]
     public bool NoJSON { get; set; }
