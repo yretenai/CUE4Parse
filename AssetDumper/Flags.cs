@@ -80,7 +80,7 @@ public record Flags : CommandLineFlags {
     public List<string> KeyGuids { get; set; } = [];
 
     [Flag("game", Help = "Unreal Version to use", Category = "CUE4Parse", EnumPrefix = ["GAME_"], ReplaceDashes = '_', ReplaceDots = '_')]
-    public EGame Game { get; set; } = EGame.GAME_UE5_LATEST;
+    public EGame Game { get; set; } = EGame.GAME_AUTODETECT;
 
     [Flag("lod", Help = "LOD export format", Category = "CUE4Parse")]
     public ELodFormat LodFormat { get; set; } = ELodFormat.FirstLod;
@@ -126,7 +126,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("load-args", Help = "Load Program Arguments from Root File", Category = "AssetDumper")]
     public bool LoadArgs { get; set; }
-    
+
     [Flag("mapstruct", Help = "path to the Map Struct override json", Category = "AssetDumper")]
     public string? MapStruct { get; set; }
 }

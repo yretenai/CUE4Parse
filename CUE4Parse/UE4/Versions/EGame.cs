@@ -4,6 +4,8 @@ namespace CUE4Parse.UE4.Versions
 {
     public enum EGame
     {
+        GAME_AUTODETECT = 0,
+
         // bytes: 01.00.0N.NX : 01=UE4, 00=masked by GAME_ENGINE, NN=UE4 subversion, X=game (4 bits, 0=base engine)
         GAME_UE4_0 = GameUtils.GameUe4Base + 0 << 4,
         GAME_UE4_1 = GameUtils.GameUe4Base + 1 << 4,

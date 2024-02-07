@@ -33,6 +33,7 @@ using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.UE4.Wwise.Exports;
 using DragonLib;
 using DragonLib.CommandLine;
+using DragonLib.IO;
 using DragonLib.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -51,8 +52,12 @@ public static class Program {
         }
 
         Globals.WarnMissingImportPackage = false;
-        
+
         Oodle.LoadOodleDll(Environment.CurrentDirectory);
+
+        if (flags.Game == EGame.GAME_AUTODETECT) {
+            FindVersion(flags);
+        }
 
         var target = Path.GetFullPath(flags.OutputPath);
         var targetBaseDir = new DirectoryInfo(target);
@@ -68,7 +73,7 @@ public static class Program {
                 if (existing is not null) {
                     flags = existing;
                 }
-                
+
                 flags.Dry = false;
             }
 
@@ -89,16 +94,16 @@ public static class Program {
             Log.Information("Setting {Key} to {Value}", kv[0], versionOverrides[kv[0]]);
         }
 
-        var mapOverrides = new Dictionary<string, KeyValuePair<string, string>>(); 
+        var mapOverrides = new Dictionary<string, KeyValuePair<string, string>>();
         if (File.Exists(flags.MapStruct)) {
             Log.Information("Loading MapStruct File {File}", flags.MapStruct);
             mapOverrides = JsonConvert.DeserializeObject<Dictionary<string, KeyValuePair<string, string>>>(await File.ReadAllTextAsync(flags.MapStruct));
         }
-        
+
         var versions = new VersionContainer(flags.Game, flags.Platform, optionOverrides: versionOverrides, mapStructTypesOverrides: mapOverrides);
         using var Provider = new DefaultFileProvider(Path.GetFullPath(flags.PakPath), SearchOption.AllDirectories, false, versions);
         Provider.UseLazySerialization = false;
-        
+
         flags.Mappings ??= Directory.GetFiles(flags.PakPath, "*.usmap", SearchOption.AllDirectories).SingleOrDefault();
         if (File.Exists(flags.Mappings)) {
             Log.Information("Loading Mappings File {File}", flags.Mappings);
@@ -260,10 +265,11 @@ public static class Program {
                             break;
                         }
 
-                        if (Provider.TrySaveAsset(path, out var data)) {
+                        var data = await Provider.TrySaveAssetAsync(path);
+                        if (data != null) {
                             targetGameFile.EnsureDirectoryExists();
                             await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
-                            stream.Write(data, 0, data.Length);
+                            await stream.WriteAsync(data, CancellationToken.None);
                         }
 
                         break;
@@ -275,10 +281,11 @@ public static class Program {
                             break;
                         }
 
-                        if (Provider.TrySaveAsset(path, out var data)) {
+                        var data = await Provider.TrySaveAssetAsync(path);
+                        if (data != null) {
                             targetGameFile.EnsureDirectoryExists();
                             await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
-                            stream.Write(data, 0, data.Length);
+                            await stream.WriteAsync(data, CancellationToken.None);
                             wemList.Add(gameFile.Path);
                         }
 
@@ -290,7 +297,8 @@ public static class Program {
                             break;
                         }
 
-                        if (Provider.TryCreateReader(path, out var archive)) {
+                        await using var archive = await Provider.TryCreateReaderAsync(path);
+                        if (archive != null) {
                             targetJsonPath.EnsureDirectoryExists();
                             await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationResource(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                         }
@@ -303,7 +311,8 @@ public static class Program {
                             break;
                         }
 
-                        if (Provider.TryCreateReader(path, out var archive)) {
+                        await using var archive = await Provider.TryCreateReaderAsync(path);
+                        if (archive != null) {
                             targetJsonPath.EnsureDirectoryExists();
                             await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationMetaDataResource(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                         }
@@ -320,7 +329,8 @@ public static class Program {
                         var package = await Provider.LoadPackageAsync(path);
                         var name = package.Name.TrimStart('/', '\\');
                         targetJsonPath = Path.Combine(target, "Json", name + ".json");
-                        if (Provider.TryCreateReader(path, out var archive)) {
+                        await using var archive = await Provider.TryCreateReaderAsync(path);
+                        if (archive != null) {
                             targetJsonPath.EnsureDirectoryExists();
                             await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FShaderCodeArchive(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
                         }
@@ -343,7 +353,7 @@ public static class Program {
                                     }
                                 }
                             }
-                            
+
                             var name = package.Name.TrimStart('/', '\\');
                             var targetPath = Path.Combine(target, name);
                             targetJsonPath = Path.Combine(target, "Json", name + ".json");
@@ -393,7 +403,7 @@ public static class Program {
 
                                             if (flags.RenameWwiseAudio) {
                                                 foreach (var media in entry.Media) {
-                                                    wwiseRename[media.MediaPathName.PlainText] = locale.LanguageName.PlainText + "/" + media.DebugName.PlainText.Replace('\\', '/').Replace(':', '_').Replace("..", "_");
+                                                    wwiseRename[media.MediaPathName.PlainText] = locale.LanguageName.PlainText + "/" + media.DebugName.PlainText.Replace('\\', '/').Replace(':', '_').Replace("..", "_", StringComparison.Ordinal);
                                                 }
                                             }
                                         }
@@ -429,7 +439,7 @@ public static class Program {
                                             if (data != null && !string.IsNullOrEmpty(format)) {
                                                 targetPath.EnsureDirectoryExists();
                                                 await using var stream = new FileStream(targetPath + $".{exportIndex}.{format}", FileMode.Create, FileAccess.Write);
-                                                stream.Write(data, 0, data.Length);
+                                                await stream.WriteAsync(data, CancellationToken.None);
                                             }
 
                                             break;
@@ -554,5 +564,65 @@ public static class Program {
                 File.Copy(Path.Combine(target, gamePath), path, true);
             }
         }
+    }
+
+    private static bool TryParseUnrealVersion(string versionString, out EGame version) {
+        version = EGame.GAME_AUTODETECT;
+        var str = versionString.Split('-');
+        if (str.Length == 1) {
+            return false;
+        }
+
+        foreach (var part in str) {
+            var parts = part.Split('.');
+            if (!int.TryParse(parts[0], out var major) || !int.TryParse(parts[1], out var minor)) {
+                continue;
+            }
+
+            if (major < 3) {
+                continue;
+            }
+
+            version = (EGame) (((major - 3) << 24) + (minor << 4));
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static void FindVersion(Flags flags) {
+        var utf8signature = Signature.CreateSignature("00 2B 2B 55 45");
+        var utf16signature = Signature.CreateSignature("00 2B 00 2B 00 55 00 45 00");
+        foreach (var path in Directory.GetFiles(flags.PakPath)) {
+            var ext = Path.GetExtension(path).ToLower();
+            if (!string.IsNullOrEmpty(ext) && ext != ".exe") {
+                continue;
+            }
+
+            var executableData = File.ReadAllBytes(path).AsSpan();
+            foreach (var hit in Signature.FindSignaturesReverse(executableData, utf8signature)) {
+                var str = executableData[(hit + 1)..].ReadUTF8StringNonNull(64);
+
+                if (TryParseUnrealVersion(str, out var version)) {
+                    Log.Information("Detected version as {Version}", version);
+                    flags.Game = version;
+                    return;
+                }
+            }
+
+            foreach (var hit in Signature.FindSignaturesReverse(executableData, utf16signature)) {
+                var str = executableData[(hit + 1)..].ReadUTF16StringNonNull(64);
+
+                if (TryParseUnrealVersion(str, out var version)) {
+                    Log.Information("Detected version as {Version}", version);
+                    flags.Game = version;
+                    return;
+                }
+            }
+        }
+
+        Log.Error("Could not autodetect version.");
+        Environment.Exit(1);
     }
 }
