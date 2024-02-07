@@ -80,7 +80,7 @@ public static class Program {
 
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
-            .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Information)
+            .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Error)
             .CreateLogger();
 
         var versionOverrides = new Dictionary<string, bool>();

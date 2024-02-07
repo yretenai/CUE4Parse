@@ -102,7 +102,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Texture
             TileBorderSize = Ar.Read<uint>();
             if (Ar.Game >= EGame.GAME_UE5_0) TileDataOffsetPerLayer = Ar.ReadArray<uint>();
 
-            if (!bStripMips)
+            if (!bStripMips || Ar.Versions["VirtualTextureBuiltData.NeverStrip"])
             {
                 NumMips = Ar.Read<uint>();
                 Width = Ar.Read<uint>();
@@ -120,7 +120,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Texture
                 TileOffsetInChunk = Ar.ReadArray<uint>();
             }
 
-            LayerTypes = Ar.ReadArray((int) NumLayers, () => (EPixelFormat) Enum.Parse(typeof(EPixelFormat), Ar.ReadFString()));
+            LayerTypes = Ar.ReadArray((int) NumLayers, () => Enum.TryParse<EPixelFormat>(Ar.ReadFString(), out var pixelFormat) ? pixelFormat : EPixelFormat.PF_Unknown);
 
             if (Ar.Game >= EGame.GAME_UE5_0)
             {
