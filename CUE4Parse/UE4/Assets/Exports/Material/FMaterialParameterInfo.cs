@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace CUE4Parse.UE4.Assets.Exports.Material
 {
     [StructFallback, JsonConverter(typeof(FMaterialParameterInfoConverter))]
-    public class FMaterialParameterInfo
+    public struct FMaterialParameterInfo
     {
         public FName Name;
         public EMaterialParameterAssociation Association;
