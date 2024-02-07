@@ -118,12 +118,13 @@ public static class Program {
             if (remain.Any()) {
                 var foundKeys = new Dictionary<FGuid, FAesKey>();
                 foreach (var reader in Provider.UnloadedVfs) {
-                    if (foundKeys.ContainsKey(reader.EncryptionKeyGuid)) {
+                    if (foundKeys.ContainsKey(reader.EncryptionKeyGuid) || !reader.IsEncrypted) {
                         continue;
                     }
 
                     foreach (var key in keys) {
                         if (reader.TestAesKey(key)) {
+                            Log.Information("Validated Key {Guid}={Key}", reader.EncryptionKeyGuid, key);
                             foundKeys[reader.EncryptionKeyGuid] = key;
                         }
                     }
