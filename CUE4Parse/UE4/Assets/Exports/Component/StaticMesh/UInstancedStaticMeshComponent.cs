@@ -14,7 +14,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
         {
             base.Deserialize(Ar, validPos);
 
-            if (Ar.Game == EGame.GAME_UE5_1) {
+            if (Ar.Versions["InstancedStaticMeshComponent.Broken"]) {
                 return;
             }
 
