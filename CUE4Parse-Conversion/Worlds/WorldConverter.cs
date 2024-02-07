@@ -51,10 +51,10 @@ public static class WorldConverter {
                 CreateActor(component, name, actorIds, actors, lights, overrideMaterials);
                 continue;
             }
-            
-            var handled = new HashSet<string>(); 
+
+            var handled = new HashSet<string>();
             UObject? targetObj = actorObject;
-            while(targetObj != null) {
+            while (targetObj != null) {
                 foreach (var property in targetObj.Properties) {
                     if (property.Tag is not ObjectProperty objectProperty) {
                         continue;
@@ -134,10 +134,10 @@ public static class WorldConverter {
                 landscapes[landscapeId].OrigY = heightTex.PlatformData.SizeY;
 
                 using var skHeightData = heightTex.Decode(platform);
-                if (skHeightData == null)
-                {
+                if (skHeightData == null) {
                     continue;
                 }
+
                 var pixels = skHeightData.Pixels;
                 var heightData = new float[pixels.Length];
                 for (var i = 0; i < pixels.Length; i++) {
@@ -181,7 +181,7 @@ public static class WorldConverter {
     }
 
     private static int CreateActor(UObject? component, string? name, List<string> actorIds, List<WorldActor> actors,
-        List<WorldLight> lights, List<(int, int, string)> overrideMaterials, bool strict = false) {
+                                   List<WorldLight> lights, List<(int, int, string)> overrideMaterials, bool strict = false) {
         if (component == null) {
             return -1;
         }
@@ -197,7 +197,7 @@ public static class WorldConverter {
         var meshIndex = component.TemplatedGetOrDefault<FPackageIndex?>("StaticMesh");
         var mesh = "None";
         if (meshIndex == null || meshIndex.IsNull) {
-             meshIndex = component.TemplatedGetOrDefault<FPackageIndex?>("SkeletalMesh");
+            meshIndex = component.TemplatedGetOrDefault<FPackageIndex?>("SkeletalMesh");
         }
 
         var isLight = component.ExportType.EndsWith("LightComponent");

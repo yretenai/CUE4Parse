@@ -77,16 +77,20 @@ public static class Program {
                 flags.Dry = false;
             }
 
-
             assetDumperStream.SetLength(0);
 
-            await assetDumperWriter.WriteAsync(JsonConvert.SerializeObject(flags, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.Default, Converters = { new StringEnumConverter() } }));
+            await assetDumperWriter.WriteAsync(JsonConvert.SerializeObject(flags, Formatting.Indented, new JsonSerializerSettings {
+                StringEscapeHandling = StringEscapeHandling.Default,
+                Converters = {
+                    new StringEnumConverter()
+                }
+            }));
         }
 
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Error)
-            .CreateLogger();
+                    .WriteTo.Console()
+                    .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Error)
+                    .CreateLogger();
 
         var versionOverrides = new Dictionary<string, bool>();
         foreach (var kv in flags.Versions.Select(version => version.Split('=', 2, StringSplitOptions.TrimEntries))) {
@@ -142,20 +146,20 @@ public static class Program {
         if (File.Exists(Path.Combine(target, "keys.txt"))) {
             var lines = await File.ReadAllLinesAsync(Path.Combine(target, "keys.txt"));
             var keys = lines.Where(x => x.Trim().Length >= 32)
-                .Select(x => {
-                    // formats:
-                    // key{s;32}
-                    // guid{s:32} key{s:32}
-                    x = x.Trim();
-                    var hasGuid = x.Length > 32;
-                    var guid = new FGuid();
-                    if (hasGuid) {
-                        guid = new FGuid(x[..32].Trim());
-                    }
+                            .Select(x => {
+                                        // formats:
+                                        // key{s;32}
+                                        // guid{s:32} key{s:32}
+                                        x = x.Trim();
+                                        var hasGuid = x.Length > 32;
+                                        var guid = new FGuid();
+                                        if (hasGuid) {
+                                            guid = new FGuid(x[..32].Trim());
+                                        }
 
-                    return new KeyValuePair<FGuid, FAesKey>(guid, new FAesKey(x));
-                })
-                .Where(x => !string.IsNullOrEmpty(x.Value.KeyString));
+                                        return new KeyValuePair<FGuid, FAesKey>(guid, new FAesKey(x));
+                                    })
+                            .Where(x => !string.IsNullOrEmpty(x.Value.KeyString));
 
             await Provider.SubmitKeysAsync(keys);
         }
@@ -175,7 +179,12 @@ public static class Program {
         }
 
         if (flags.SaveLocRes) {
-            await File.WriteAllTextAsync(Path.Combine(target, "localization.json"), JsonConvert.SerializeObject(Provider.LocalizedResources, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
+            await File.WriteAllTextAsync(Path.Combine(target, "localization.json"), JsonConvert.SerializeObject(Provider.LocalizedResources, Formatting.Indented, new JsonSerializerSettings {
+                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                Converters = {
+                    new StringEnumConverter()
+                }
+            }));
         }
 
         if (flags.Dry) {
@@ -203,11 +212,11 @@ public static class Program {
             filesEnumerable = filesEnumerable.Where(x => x.Value.Extension is not ("ubulk" or "uexp" or "uptnl"));
         }
 
-        filesEnumerable = filesEnumerable.OrderBy(x => Path.GetFileName(((VfsEntry)x.Value).Vfs.Path).Replace('.', '_'), new NaturalStringComparer(StringComparison.Ordinal))
-            .ThenBy(x => x.Key, new NaturalStringComparer(StringComparison.Ordinal));
+        filesEnumerable = filesEnumerable.OrderBy(x => Path.GetFileName(((VfsEntry) x.Value).Vfs.Path).Replace('.', '_'), new NaturalStringComparer(StringComparison.Ordinal))
+                                         .ThenBy(x => x.Key, new NaturalStringComparer(StringComparison.Ordinal));
 
         var files = filesEnumerable.ToArray();
-        var count = (float)files.Length;
+        var count = (float) files.Length;
         var processed = 0;
 
         var exportOptions = new ExporterOptions {
@@ -300,7 +309,12 @@ public static class Program {
                         await using var archive = await Provider.TryCreateReaderAsync(path);
                         if (archive != null) {
                             targetJsonPath.EnsureDirectoryExists();
-                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationResource(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
+                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationResource(archive), Formatting.Indented, new JsonSerializerSettings {
+                                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                Converters = {
+                                    new StringEnumConverter()
+                                }
+                            }));
                         }
 
                         break;
@@ -314,7 +328,12 @@ public static class Program {
                         await using var archive = await Provider.TryCreateReaderAsync(path);
                         if (archive != null) {
                             targetJsonPath.EnsureDirectoryExists();
-                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationMetaDataResource(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
+                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FTextLocalizationMetaDataResource(archive), Formatting.Indented, new JsonSerializerSettings {
+                                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                Converters = {
+                                    new StringEnumConverter()
+                                }
+                            }));
                         }
 
                         break;
@@ -332,7 +351,12 @@ public static class Program {
                         await using var archive = await Provider.TryCreateReaderAsync(path);
                         if (archive != null) {
                             targetJsonPath.EnsureDirectoryExists();
-                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FShaderCodeArchive(archive), Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
+                            await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(new FShaderCodeArchive(archive), Formatting.Indented, new JsonSerializerSettings {
+                                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                Converters = {
+                                    new StringEnumConverter()
+                                }
+                            }));
                         }
 
                         break;
@@ -364,7 +388,12 @@ public static class Program {
                                 if (exports.All(x => x.Class?.Name.StartsWith("MovieScene") != true)) {
                                     targetJsonPath.EnsureDirectoryExists();
                                     try {
-                                        await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(exports, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
+                                        await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(exports, Formatting.Indented, new JsonSerializerSettings {
+                                            StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                            Converters = {
+                                                new StringEnumConverter()
+                                            }
+                                        }));
                                     } catch (Exception e) {
                                         Log.Error(e, "Failed to convert UObject exports to JSON");
                                     }
@@ -385,16 +414,11 @@ public static class Program {
                                         foreach (var (locale, entry) in akAudioEvent.EventCookedData.EventLanguageMap) {
                                             if (flags.TrackWwiseEvents) {
                                                 var allDebug = entry.Media.Select(x => x as IWwiseDebugName)
-                                                    .Concat(
-                                                        entry.ExternalSources.Select(x => x as IWwiseDebugName))
-                                                    .Concat(
-                                                        entry.SoundBanks.Select(x => x as IWwiseDebugName))
-                                                    .Concat(
-                                                        entry.SwitchContainerLeaves.SelectMany(x => x.Media).Select(x => x as IWwiseDebugName))
-                                                    .Concat(
-                                                        entry.SwitchContainerLeaves.SelectMany(x => x.ExternalSources).Select(x => x as IWwiseDebugName))
-                                                    .Concat(
-                                                        entry.SwitchContainerLeaves.SelectMany(x => x.SoundBanks).Select(x => x as IWwiseDebugName));
+                                                                    .Concat(entry.ExternalSources.Select(x => x as IWwiseDebugName))
+                                                                    .Concat(entry.SoundBanks.Select(x => x as IWwiseDebugName))
+                                                                    .Concat(entry.SwitchContainerLeaves.SelectMany(x => x.Media).Select(x => x as IWwiseDebugName))
+                                                                    .Concat(entry.SwitchContainerLeaves.SelectMany(x => x.ExternalSources).Select(x => x as IWwiseDebugName))
+                                                                    .Concat(entry.SwitchContainerLeaves.SelectMany(x => x.SoundBanks).Select(x => x as IWwiseDebugName));
 
                                                 foreach (var media in allDebug) {
                                                     wwiseNames.Add(media.DebugName.PlainText);
@@ -506,12 +530,22 @@ public static class Program {
                                         }
                                         case UDataTable dataTable when !flags.NoDataTable: {
                                             targetPath.EnsureDirectoryExists();
-                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(dataTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
+                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(dataTable, Formatting.Indented, new JsonSerializerSettings {
+                                                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                                Converters = {
+                                                    new StringEnumConverter()
+                                                }
+                                            }));
                                             break;
                                         }
                                         case UStringTable stringTable when !flags.NoStringTable: {
                                             targetPath.EnsureDirectoryExists();
-                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(stringTable, Formatting.Indented, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeNonAscii, Converters = { new StringEnumConverter() } }));
+                                            await File.WriteAllTextAsync($"{targetPath}.{exportIndex}.json", JsonConvert.SerializeObject(stringTable, Formatting.Indented, new JsonSerializerSettings {
+                                                StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                                Converters = {
+                                                    new StringEnumConverter()
+                                                }
+                                            }));
                                             break;
                                         }
                                     }
@@ -519,6 +553,7 @@ public static class Program {
                                     if (Debugger.IsAttached) {
                                         throw;
                                     }
+
                                     Log.Error(e, "Failed to convert UObject export #{Export}", exportIndex);
                                 }
                             }

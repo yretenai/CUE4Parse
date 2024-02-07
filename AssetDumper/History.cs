@@ -50,7 +50,7 @@ public enum HistoryVersion : byte {
     InvalidVersion = 0,
     InitialVersion = 1,
     AddedOptionsAndUptnl = 2,
-    
+
     Latest = AddedOptionsAndUptnl
 }
 
@@ -62,26 +62,25 @@ public enum HistoryType {
 }
 
 public class History {
-    
     private readonly HashAlgorithm? HashAlgorithm;
     private readonly bool ReadOnly;
 
     private readonly Dictionary<string, HistoryEntry> Entries = new();
 
     public HistoryOptions Options { get; }
-    
+
     public History(HistoryOptions options) {
         Options = options;
 
         HashAlgorithm = options.ChecksumType switch {
-            HistoryChecksumType.CRC32C when CRC32CAlgorithm.IsSupported => CRC32CAlgorithm.Create(),
-            HistoryChecksumType.CRC32C => CRC.Create(CRC32Variants.Castagnoli),
-            HistoryChecksumType.DJB2 => DJB2.Create(),
-            HistoryChecksumType.DJB2a => DJB2.CreateAlternate(),
-            HistoryChecksumType.FNV1 => FNV.Create(FNV32Basis.FNV1),
-            HistoryChecksumType.FNV1a => FNV.CreateInverse(FNV32Basis.FNV1),
-            _ => throw new NotSupportedException()
-        };
+                            HistoryChecksumType.CRC32C when CRC32CAlgorithm.IsSupported => CRC32CAlgorithm.Create(),
+                            HistoryChecksumType.CRC32C                                  => CRC.Create(CRC32Variants.Castagnoli),
+                            HistoryChecksumType.DJB2                                    => DJB2.Create(),
+                            HistoryChecksumType.DJB2a                                   => DJB2.CreateAlternate(),
+                            HistoryChecksumType.FNV1                                    => FNV.Create(FNV32Basis.FNV1),
+                            HistoryChecksumType.FNV1a                                   => FNV.CreateInverse(FNV32Basis.FNV1),
+                            _                                                           => throw new NotSupportedException()
+                        };
 
         ReadOnly = false;
     }
@@ -106,7 +105,10 @@ public class History {
                 throw new NotSupportedException();
             case HistoryVersion.InitialVersion:
                 entrySize = Unsafe.SizeOf<HistoryEntryHeaderV1>();
-                header = header with { ChecksumType = HistoryChecksumType.CRC32C, Flags = HistoryFlags.HashExport | HistoryFlags.HashBulk | HistoryFlags.HashOptional };
+                header = header with {
+                    ChecksumType = HistoryChecksumType.CRC32C,
+                    Flags = HistoryFlags.HashExport | HistoryFlags.HashBulk | HistoryFlags.HashOptional
+                };
                 stream.Position = 5;
                 break;
             default:
@@ -131,9 +133,9 @@ public class History {
             stream.ReadExactly(entryBuffer.AsBytes());
 
             var entryHeader = header.Version switch {
-                HistoryVersion.InitialVersion => MemoryMarshal.Read<HistoryEntryHeaderV1>(entryBuffer).Upgrade(),
-                _ => MemoryMarshal.Read<HistoryEntryHeader>(entryBuffer)
-            };
+                                  HistoryVersion.InitialVersion => MemoryMarshal.Read<HistoryEntryHeaderV1>(entryBuffer).Upgrade(),
+                                  _                             => MemoryMarshal.Read<HistoryEntryHeader>(entryBuffer)
+                              };
 
             var text = new byte[entryHeader.TextLength].AsSpan();
             stream.ReadExactly(text);
@@ -157,7 +159,9 @@ public class History {
         stream.Write(new Span<HistoryHeader>(ref header).AsBytes());
         foreach (var _entry in Entries.Values) {
             var text = Encoding.UTF8.GetBytes(_entry.Path);
-            var entry = _entry.Header with { TextLength = text.Length };
+            var entry = _entry.Header with {
+                TextLength = text.Length
+            };
             stream.Write(new Span<HistoryEntryHeader>(ref entry).AsBytes());
             stream.Write(text);
         }
@@ -204,7 +208,7 @@ public class History {
         if (other.Options.ChecksumType != Options.ChecksumType) {
             return HistoryType.Undetermined;
         }
-        
+
         if (!Entries.TryGetValue(entry.Path, out var localEntry)) {
             return HistoryType.New;
         }
@@ -230,7 +234,7 @@ public class History {
         public HistoryChecksumType ChecksumType { get; init; }
         public HistoryFlags Flags { get; init; }
     }
-    
+
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private readonly record struct HistoryEntryHeaderV1 {

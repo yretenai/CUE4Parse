@@ -20,8 +20,7 @@ public class WorldLandscape {
     public int OrigX;
     public int OrigY;
 
-    public void Serialize(FArchiveWriter Ar) // 256 + 4 + 4+ 4
-    {
+    public void Serialize(FArchiveWriter Ar) {
         Ar.Write(Path ?? "None", 256);
         Ar.Write(ActorId);
         Ar.Write(TileX);

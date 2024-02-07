@@ -35,6 +35,7 @@ public class WorldExporter : ExporterBase {
             if (actor.Name is { Length: > 256 }) {
                 actor.Name = actor.Name[..256];
             }
+
             actor.Serialize(Ar);
         }
 
