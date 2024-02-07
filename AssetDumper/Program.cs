@@ -14,7 +14,6 @@ using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
 using CUE4Parse.GameTypes.OS.Assets.Exports;
 using CUE4Parse.MappingsProvider;
-using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports.Animation;
 using CUE4Parse.UE4.Assets.Exports.Engine;
 using CUE4Parse.UE4.Assets.Exports.Internationalization;
@@ -56,7 +55,7 @@ public static class Program {
         Oodle.LoadOodleDll(Environment.CurrentDirectory);
 
         var target = Path.GetFullPath(flags.OutputPath);
-        var targetBaseDir = new DirectoryInfo(target);
+        var targetBaseDir = new DirectoryInfo(Path.Combine(target, "Content"));
         targetBaseDir.Create();
 
         Log.Logger = new LoggerConfiguration()
@@ -250,10 +249,21 @@ public static class Program {
                 Log.Information("{Percent:N3}% {HistoryType:G} {GameFile}", pc, historyType, gameFile);
             }
 
+            var normalizedGamePath = gameFile.Path.TrimStart('/', '\\');
+            if (Provider.Versions.Game >= EGame.GAME_UE5_0) {
+                if (!normalizedGamePath.StartsWith(Provider.InternalGameName + "/")) {
+                    continue;
+                }
+
+                normalizedGamePath = normalizedGamePath[(Provider.InternalGameName.Length + 1)..];
+                normalizedGamePath = normalizedGamePath.StartsWith("Content/") ? $"Game/{normalizedGamePath[8..]}" :
+                    normalizedGamePath.StartsWith("Plugins/") && !normalizedGamePath.EndsWith(".upluginmanifest") ? normalizedGamePath[8..] : $"Game/{normalizedGamePath}";
+            }
+
             if (flags.SaveRaw) {
                 var data = await gameFile.TryReadAsync();
                 if (data != null) {
-                    var rawPath = Path.Combine(target, "Raw", gameFile.Path);
+                    var rawPath = Path.Combine(target, "Raw", normalizedGamePath);
                     rawPath.EnsureDirectoryExists();
                     await File.WriteAllBytesAsync(rawPath, data);
                 }
@@ -267,13 +277,31 @@ public static class Program {
                 continue;
             }
 
-            var targetGameFile = Path.Combine(target, gameFile.Path);
-            var targetJsonPath = Path.Combine(target, "Json", gameFile.Path + ".json");
+            var targetGameFile = Path.Combine(target, "Content", normalizedGamePath);
+            var targetJsonPath = Path.Combine(target, "Json", normalizedGamePath + ".json");
 
             try {
                 switch (gameFile.Extension.ToLowerInvariant()) {
                     default: {
                         if (flags.NoUnknown) {
+                            break;
+                        }
+
+                        var data = await Provider.TrySaveAssetAsync(path);
+                        if (data != null) {
+                            targetGameFile.EnsureDirectoryExists();
+                            await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                            await stream.WriteAsync(data, CancellationToken.None);
+                        }
+
+                        break;
+                    }
+
+                    case "ini":
+                    case "uplugin":
+                    case "uproject":
+                    case "upluginmanifest": {
+                        if (flags.NoConfig) {
                             break;
                         }
 
@@ -298,7 +326,7 @@ public static class Program {
                             targetGameFile.EnsureDirectoryExists();
                             await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
                             await stream.WriteAsync(data, CancellationToken.None);
-                            wemList.Add(gameFile.Path);
+                            wemList.Add(normalizedGamePath);
                         }
 
                         break;
@@ -370,7 +398,7 @@ public static class Program {
                         try {
                             var package = await Provider.LoadPackageAsync(path);
                             var name = package.Name.TrimStart('/', '\\');
-                            var targetPath = Path.Combine(target, name);
+                            var targetPath = Path.Combine(target, "Content", name);
                             targetJsonPath = Path.Combine(target, "Json", name + ".json");
                             var exports = package.GetExports().ToArray();
 
@@ -587,7 +615,7 @@ public static class Program {
                 var path = Path.Combine(target, "Wwise", realPath);
                 path.EnsureDirectoryExists();
                 path = Path.ChangeExtension(path, Path.GetExtension(gamePath));
-                File.Copy(Path.Combine(target, gamePath), path, true);
+                File.Copy(Path.Combine(target, "Content", gamePath), path, true);
             }
         }
     }

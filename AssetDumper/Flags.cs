@@ -61,6 +61,9 @@ public record Flags : CommandLineFlags {
     [Flag("no-animation-composites", Help = "Suppress Animation Composite conversion", Category = "Export")]
     public bool NoAnimationComposites { get; set; }
 
+    [Flag("no-config", Help = "Suppress Config files from being saved", Category = "Export")]
+    public bool NoConfig { get; set; }
+
     [Flag("no-unknown", Help = "Suppress unknown files from being saved", Category = "Export")]
     public bool NoUnknown { get; set; }
 
