@@ -605,7 +605,7 @@ public static class Program {
                 continue;
             }
 
-            if (major < 3) {
+            if (major < 4) {
                 continue;
             }
 
