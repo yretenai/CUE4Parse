@@ -93,7 +93,7 @@ public static class Program {
 
         var versionOverrides = new Dictionary<string, bool>();
         foreach (var kv in flags.Versions.Select(version => version.Split('=', 2, StringSplitOptions.TrimEntries))) {
-            versionOverrides[kv[0]] = bool.TryParse(kv[1], out var value) && value;
+            versionOverrides[kv[0]] = bool.TryParse(kv.ElementAtOrDefault(1) ?? "true", out var value) && value;
             Log.Information("Setting {Key} to {Value}", kv[0], versionOverrides[kv[0]]);
         }
 
@@ -250,15 +250,6 @@ public static class Program {
             }
 
             var normalizedGamePath = gameFile.Path.TrimStart('/', '\\');
-            if (Provider.Versions.Game >= EGame.GAME_UE5_0) {
-                if (!normalizedGamePath.StartsWith(Provider.InternalGameName + "/")) {
-                    continue;
-                }
-
-                normalizedGamePath = normalizedGamePath[(Provider.InternalGameName.Length + 1)..];
-                normalizedGamePath = normalizedGamePath.StartsWith("Content/") ? $"Game/{normalizedGamePath[8..]}" :
-                    normalizedGamePath.StartsWith("Plugins/") && !normalizedGamePath.EndsWith(".upluginmanifest") ? normalizedGamePath[8..] : $"Game/{normalizedGamePath}";
-            }
 
             if (flags.SaveRaw) {
                 var data = await gameFile.TryReadAsync();
