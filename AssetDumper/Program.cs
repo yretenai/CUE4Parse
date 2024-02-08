@@ -60,7 +60,7 @@ public static class Program {
 
         Log.Logger = new LoggerConfiguration()
                     .WriteTo.Console()
-                    .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Error)
+                    .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Information)
                     .CreateLogger();
 
         if (flags.Game == EGame.GAME_AUTODETECT) {
@@ -170,6 +170,7 @@ public static class Program {
         if (flags.SkipProblematicClasses) {
             Globals.SkipObjectClasses.Add("MapBuildDataRegistry");
             Globals.SkipObjectClasses.Add("MovieSceneCompiledData");
+            Globals.SkipObjectClasses.Add("MovieSceneEventParameters");
             Globals.SkipObjectClasses.Add("TimelineComponent");
             Globals.SkipObjectClasses.Add("NiagaraScript");
         }
