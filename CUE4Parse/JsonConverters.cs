@@ -958,14 +958,17 @@ public class UScriptMapConverter : JsonConverter<UScriptMap>
     {
         writer.WriteStartObject();
 
+        var index = 0;
         foreach (var kvp in value.Properties)
         {
+            index++;
             switch (kvp.Key)
             {
-                case StructProperty:
-                    writer.WritePropertyName("Key");
-                    serializer.Serialize(writer, kvp.Key);
-                    writer.WritePropertyName("Value");
+                case StructProperty structProperty:
+                    if (structProperty.Value!.GetType().GetMethod("ToString")!.DeclaringType != typeof(object))
+                        writer.WritePropertyName(structProperty.Value!.ToString());
+                    else
+                        writer.WritePropertyName($"MapEntry{index}");
                     serializer.Serialize(writer, kvp.Value);
                     break;
                 default:
