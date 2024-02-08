@@ -226,7 +226,10 @@ namespace CUE4Parse_Conversion.Animations
         public static CAnimSequence ConvertAdditive(this CAnimSequence animSeq, UAnimSequence? refPoseSeq, USkeleton skeleton)
         {
             var refFrameIndex = animSeq.OriginalSequence.RefFrameIndex;
-            var refPoseSkel = refPoseSeq?.Skeleton.Load<USkeleton>() ?? skeleton;
+            var refPoseSkel = refPoseSeq?.Skeleton.Load<USkeleton>();
+            if (refPoseSkel == null || refPoseSkel.GetFullName() == skeleton.GetFullName()) {
+                return animSeq;
+            }
             var refAnimSet = refPoseSkel.ConvertAnims(refPoseSeq);
 
             FCompactPose[] additivePoses = FAnimationRuntime.LoadAsPoses(animSeq, skeleton);
