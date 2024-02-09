@@ -11,5 +11,6 @@ namespace CUE4Parse
         public static bool FatalObjectSerializationErrors = false;
         public static bool WarnMissingImportPackage = true;
         public static HashSet<string> SkipObjectClasses = [];
+        public static bool AlwaysUseChunkedReader = false;
     }
 }
