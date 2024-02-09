@@ -20,10 +20,11 @@ namespace CUE4Parse_Conversion.Materials
         private readonly string _internalFilePath;
         private readonly MaterialData _materialData;
 
-        public MaterialExporter2(ExporterOptions options)
+        public MaterialExporter2(ExporterOptions options, string? suffix = null)
         {
             Options = options;
             _internalFilePath = string.Empty;
+            Suffix = suffix ?? string.Empty;
             _materialData = new MaterialData
             {
                 Textures = new Dictionary<string, string>(),
@@ -31,7 +32,7 @@ namespace CUE4Parse_Conversion.Materials
             };
         }
 
-        public MaterialExporter2(UUnrealMaterial? unrealMaterial, ExporterOptions options) : this(options)
+        public MaterialExporter2(UUnrealMaterial? unrealMaterial, ExporterOptions options, string? suffix = null) : this(options, suffix)
         {
             if (unrealMaterial == null) return;
             _internalFilePath = unrealMaterial.Owner?.Name ?? unrealMaterial.Name;
@@ -50,7 +51,7 @@ namespace CUE4Parse_Conversion.Materials
             savedFilePath = string.Empty;
             if (!baseDirectory.Exists) return false;
 
-            savedFilePath = FixAndCreatePath(baseDirectory, _internalFilePath, "json");
+            savedFilePath = FixAndCreatePath(baseDirectory, _internalFilePath + Suffix, "json");
             File.WriteAllText(savedFilePath, JsonConvert.SerializeObject(_materialData, Formatting.Indented));
             label = Path.GetFileName(savedFilePath);
 

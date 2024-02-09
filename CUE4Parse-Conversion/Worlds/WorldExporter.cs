@@ -15,9 +15,9 @@ namespace CUE4Parse_Conversion.Worlds;
 public class WorldExporter : ExporterBase {
     public readonly string WorldName;
 
-    public WorldExporter(UWorld world, ETexturePlatform platform, int exportIndex = 0) {
+    public WorldExporter(UWorld world, ETexturePlatform platform, ExporterOptions options, string? suffix = null) : base(world, options, suffix) {
         WorldName = world.Owner?.Name ?? world.Name;
-        WorldName += $".{exportIndex}";
+        WorldName += Suffix;
 
         var (actors, lights, overrideMaterials, landscapes) = WorldConverter.ConvertWorld(world, platform);
 

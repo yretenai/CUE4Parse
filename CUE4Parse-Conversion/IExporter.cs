@@ -56,7 +56,7 @@ namespace CUE4Parse_Conversion
     {
         protected readonly string PackagePath;
         protected readonly string ExportName;
-        protected readonly string Suffix;
+        protected string Suffix;
         public ExporterOptions Options;
 
         protected ExporterBase()

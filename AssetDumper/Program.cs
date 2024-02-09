@@ -486,37 +486,37 @@ public static class Program {
                                         }
                                         case UAnimSequence animSequence when flags is { NoAnimations: false, NoAnimationSequences: false }: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new AnimExporter(animSequence, exportOptions);
+                                            var exporter = new AnimExporter(animSequence, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UAnimMontage animMontage when flags is { NoAnimations: false, NoAnimationMontages: false }: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new AnimExporter(animMontage, exportOptions);
+                                            var exporter = new AnimExporter(animMontage, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UAnimComposite animComposite when flags is { NoAnimations: false, NoAnimationComposites: false }: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new AnimExporter(animComposite, exportOptions);
+                                            var exporter = new AnimExporter(animComposite, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UMaterialInstanceConstant materialInterface when !flags.NoMaterial: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new MaterialExporter2(materialInterface, exportOptions);
+                                            var exporter = new MaterialExporter2(materialInterface, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UMaterial material when !flags.NoMaterial && material.CachedExpressionData != null: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new MaterialExporter2(material, exportOptions);
+                                            var exporter = new MaterialExporter2(material, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
                                         case UUnrealMaterial unrealMaterial when !flags.NoMaterial: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new MaterialExporter2(unrealMaterial, exportOptions);
+                                            var exporter = new MaterialExporter2(unrealMaterial, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
@@ -540,7 +540,7 @@ public static class Program {
                                         }
                                         case UWorld world when !flags.NoWorlds: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new WorldExporter(world, flags.Platform);
+                                            var exporter = new WorldExporter(world, flags.Platform, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }

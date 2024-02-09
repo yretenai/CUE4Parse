@@ -16,13 +16,13 @@ namespace CUE4Parse_Conversion.Animations
     {
         public readonly List<Anim> AnimSequences;
 
-        private AnimExporter(UObject export, ExporterOptions options) : base(export, options)
+        private AnimExporter(UObject export, ExporterOptions options, string? suffix = null) : base(export, options, suffix)
         {
             AnimSequences = new List<Anim>();
         }
 
-        private AnimExporter(ExporterOptions options, UObject export, CAnimSet animSet)
-            : this(export, options)
+        private AnimExporter(ExporterOptions options, UObject export, CAnimSet animSet, string? suffix = null)
+            : this(export, options, suffix)
         {
             for (var sequenceIndex = 0; sequenceIndex < animSet.Sequences.Count; sequenceIndex++)
             {
@@ -41,35 +41,35 @@ namespace CUE4Parse_Conversion.Animations
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Options.MeshFormat), Options.MeshFormat, null);
                 }
-            
+
                 AnimSequences.Add(sequenceIndex > 0
-                    ? new Anim($"{PackagePath}_SEQ{sequenceIndex}.{ext}", Ar.GetBuffer())
-                    : new Anim($"{PackagePath}.{ext}", Ar.GetBuffer()));
+                    ? new Anim($"{PackagePath}{Suffix}.seq{sequenceIndex}.{ext}", Ar.GetBuffer())
+                    : new Anim($"{PackagePath}{Suffix}.{ext}", Ar.GetBuffer()));
             }
         }
 
-        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimSequence? animSequence = null)
-            : this(options, animSequence != null ? animSequence : skeleton, skeleton.ConvertAnims(animSequence))
+        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimSequence? animSequence = null, string? suffix = null)
+            : this(options, animSequence != null ? animSequence : skeleton, skeleton.ConvertAnims(animSequence), suffix)
         {
 
         }
 
-        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimMontage? animMontage = null)
-            : this(options, animMontage != null ? animMontage : skeleton, skeleton.ConvertAnims(animMontage))
+        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimMontage? animMontage = null, string? suffix = null)
+            : this(options, animMontage != null ? animMontage : skeleton, skeleton.ConvertAnims(animMontage), suffix)
         {
 
         }
 
-        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimComposite? animComposite = null)
-            : this(options, animComposite != null ? animComposite : skeleton, skeleton.ConvertAnims(animComposite))
+        private AnimExporter(ExporterOptions options, USkeleton skeleton, UAnimComposite? animComposite = null, string? suffix = null)
+            : this(options, animComposite != null ? animComposite : skeleton, skeleton.ConvertAnims(animComposite), suffix)
         {
 
         }
 
-        public AnimExporter(UAnimSequence animSequence, ExporterOptions options) : this(options, animSequence.Skeleton.Load<USkeleton>()!, animSequence) { }
-        public AnimExporter(UAnimMontage animMontage, ExporterOptions options) : this(options, animMontage.Skeleton.Load<USkeleton>()!, animMontage) { }
-        public AnimExporter(UAnimComposite animComposite, ExporterOptions options) : this(options, animComposite.Skeleton.Load<USkeleton>()!, animComposite) { }
-        
+        public AnimExporter(UAnimSequence animSequence, ExporterOptions options, string? suffix = null) : this(options, animSequence.Skeleton.Load<USkeleton>()!, animSequence, suffix) { }
+        public AnimExporter(UAnimMontage animMontage, ExporterOptions options, string? suffix = null) : this(options, animMontage.Skeleton.Load<USkeleton>()!, animMontage, suffix) { }
+        public AnimExporter(UAnimComposite animComposite, ExporterOptions options, string? suffix = null) : this(options, animComposite.Skeleton.Load<USkeleton>()!, animComposite, suffix) { }
+
 
         public override bool TryWriteToDir(DirectoryInfo baseDirectory, out string label, out string savedFilePath)
         {
