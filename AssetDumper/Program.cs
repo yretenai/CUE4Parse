@@ -58,9 +58,14 @@ public static class Program {
         var targetBaseDir = new DirectoryInfo(Path.Combine(target, "Content"));
         targetBaseDir.Create();
 
+        var logPath = Path.Combine(target, "Log.txt");
+        if (File.Exists(logPath)) {
+            File.Delete(logPath);
+        }
+
         Log.Logger = new LoggerConfiguration()
                     .WriteTo.Console()
-                    .WriteTo.File(Path.Combine(target, "Log.txt"), LogEventLevel.Information)
+                    .WriteTo.File(logPath, LogEventLevel.Information)
                     .CreateLogger();
 
         if (flags.Game == EGame.GAME_AUTODETECT) {
