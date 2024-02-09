@@ -169,12 +169,12 @@ namespace CUE4Parse_Conversion.Meshes
 
                 if (Options.LodFormat == ELodFormat.FirstLod)
                 {
-                    MeshLods.Add(new Mesh($"{PackagePath}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
+                    MeshLods.Add(new Mesh($"{PackagePath}{Suffix}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
                     break;
                 }
                 else
                 {
-                    MeshLods.Add(new Mesh($"{PackagePath}_LOD{i}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
+                    MeshLods.Add(new Mesh($"{PackagePath}{Suffix}.lod{i}.{ext}", Ar.GetBuffer(), materialExports ?? new List<MaterialExporter2>()));
                 }
                 i++;
             }

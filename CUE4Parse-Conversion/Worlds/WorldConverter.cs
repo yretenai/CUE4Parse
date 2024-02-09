@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Worlds.PSW;
 using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects.Properties;
@@ -39,17 +40,21 @@ public static class WorldConverter {
 
             var name = actorObject.Name.SubstringAfterLast('/');
 
-            if (actorObject.ExportType == "Landscape") {
+            if (actorObject.ExportType is "Landscape" or "LandscapeStreamingProxy" or "LandscapeProxy") {
                 var root = actorObject.TemplatedGetOrDefault<UObject?>("RootComponent");
                 var actorId = CreateActor(root, name, actorIds, actors, lights, overrideMaterials);
                 CreateLandscape(actorId, actorObject, landscapes, platform);
                 continue;
             }
 
-            var component = actorObject.TemplatedGetOrDefault<UStaticMeshComponent?>("StaticMeshComponent");
-            if (component != null) {
-                CreateActor(component, name, actorIds, actors, lights, overrideMaterials);
-                continue;
+            var staticComponent = actorObject.TemplatedGetOrDefault<UStaticMeshComponent?>("StaticMeshComponent");
+            if (staticComponent != null) {
+                CreateActor(staticComponent, name, actorIds, actors, lights, overrideMaterials);
+            }
+
+            var skelComponent = actorObject.TemplatedGetOrDefault<USkeletalMeshComponent?>("SkeletalMeshComponent");
+            if (skelComponent != null) {
+                CreateActor(skelComponent, name, actorIds, actors, lights, overrideMaterials);
             }
 
             var handled = new HashSet<string>();
@@ -196,8 +201,10 @@ public static class WorldConverter {
         var parent = component.TemplatedGetOrDefault<FPackageIndex?>("AttachParent");
         var meshIndex = component.TemplatedGetOrDefault<FPackageIndex?>("StaticMesh");
         var mesh = "None";
+        var isSkeleton = component is USkeletalMeshComponent;
         if (meshIndex == null || meshIndex.IsNull) {
             meshIndex = component.TemplatedGetOrDefault<FPackageIndex?>("SkeletalMesh");
+            isSkeleton = meshIndex != null;
         }
 
         var isLight = component.ExportType.EndsWith("LightComponent");
@@ -248,6 +255,10 @@ public static class WorldConverter {
 
         if (component.TemplatedGetOrDefault("bUseTemperature", false)) {
             actor.Flags |= WorldActorFlags.UseTempature;
+        }
+
+        if (isSkeleton) {
+            actor.Flags |= WorldActorFlags.IsSkeleton;
         }
 
         actor.Position = component.TemplatedGetOrDefault("RelativeLocation", FVector.ZeroVector);
