@@ -14,6 +14,11 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
         public override void Deserialize(FAssetArchive Ar, long validPos)
         {
             base.Deserialize(Ar, validPos);
+
+            if (Ar.Versions["StaticMeshComponent.Broken"]) {
+                return;
+            }
+
             LODData = Ar.ReadArray(() => new FStaticMeshComponentLODInfo(Ar));
         }
 

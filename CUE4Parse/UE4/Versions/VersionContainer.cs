@@ -87,7 +87,7 @@ namespace CUE4Parse.UE4.Versions
             Options["AnimSequence.HasCompressedRawSize"] = Game >= GAME_UE4_17; // Early 4.17 builds don't have this, and some custom engine builds don't either.
             Options["StaticMesh.HasNavCollision"] = Ver >= EUnrealEngineObjectUE4Version.STATIC_MESH_STORE_NAV_COLLISION && Game != GAME_GearsOfWar4 && Game != GAME_TEKKEN7;
             Options["VirtualTextureBuiltData.NeverStrip"] = false;
-            
+
             // special general property workarounds
             Options["ByteProperty.TMap64Bit"] = false;
             Options["ByteProperty.TMap16Bit"] = false;
@@ -99,6 +99,7 @@ namespace CUE4Parse.UE4.Versions
 
             // skips
             Options["InstancedStaticMeshComponent.Broken"] = false;
+            Options["StaticMeshComponent.Broken"] = false;
 
             if (_optionOverrides == null) return;
             foreach (var (key, value) in _optionOverrides)
