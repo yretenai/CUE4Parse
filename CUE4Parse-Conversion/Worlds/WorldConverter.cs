@@ -86,16 +86,15 @@ public static class WorldConverter {
 
     private static void CreateLandscape(int actorId, UObject actorObject, List<WorldLandscape> landscapes, ETexturePlatform platform) {
         var landscapeComponents = actorObject.TemplatedGetOrDefault("LandscapeComponents", Array.Empty<UObject?>());
-
+        var landscapeSectionOffset = actorObject.TemplatedGetOrDefault<FIntPoint>("LandscapeSectionOffset");
         foreach (var landscapeComponent in landscapeComponents) {
             if (landscapeComponent == null) {
                 continue;
             }
 
             var size = landscapeComponent.TemplatedGetOrDefault("ComponentSizeQuads", 8);
-
-            var x = landscapeComponent.TemplatedGetOrDefault<int>("SectionBaseX");
-            var y = landscapeComponent.TemplatedGetOrDefault<int>("SectionBaseY");
+            var x = landscapeComponent.TemplatedGetOrDefault<int>("SectionBaseX") - (int) landscapeSectionOffset.X;
+            var y = landscapeComponent.TemplatedGetOrDefault<int>("SectionBaseY") - (int) landscapeSectionOffset.Y;
 
             var heightScale = landscapeComponent.TemplatedGetOrDefault("HeightmapScaleBias", new FVector4(1, 1, 1, 1));
             var weightScale = landscapeComponent.TemplatedGetOrDefault("WeightmapScaleBias", new FVector4(1, 1, 1, 1));
