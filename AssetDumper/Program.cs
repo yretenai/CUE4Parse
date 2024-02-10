@@ -178,6 +178,8 @@ public static class Program {
             Globals.SkipObjectClasses.Add("MovieSceneCompiledData");
             Globals.SkipObjectClasses.Add("MovieSceneEventParameters");
             Globals.SkipObjectClasses.Add("MovieSceneEventSection");
+            Globals.SkipObjectClasses.Add("MovieSceneSegment");
+            Globals.SkipObjectClasses.Add("WidgetAnimation");
             Globals.SkipObjectClasses.Add("LevelSequence");
             Globals.SkipObjectClasses.Add("TimelineComponent");
             Globals.SkipObjectClasses.Add("NiagaraScript");
@@ -623,13 +625,19 @@ public static class Program {
     private static bool TryParseUnrealVersion(string versionString, out EGame version) {
         version = EGame.GAME_AUTODETECT;
         var str = versionString.Split('-');
+        Log.Information("Found version candidate {Name}", str);
         if (str.Length == 1) {
             return false;
         }
 
+        if (str[1].StartsWith("4.25Plus")) {
+            version = EGame.GAME_UE4_25_Plus;
+            return true;
+        }
+
         foreach (var part in str) {
             var parts = part.Split('.');
-            if (!int.TryParse(parts[0], out var major) || !int.TryParse(parts[1], out var minor)) {
+            if (parts.Length < 2 || !int.TryParse(parts[0], out var major) || !int.TryParse(parts[1], out var minor)) {
                 continue;
             }
 
