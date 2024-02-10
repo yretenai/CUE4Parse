@@ -12,5 +12,7 @@ namespace CUE4Parse
         public static bool WarnMissingImportPackage = true;
         public static HashSet<string> SkipObjectClasses = [];
         public static bool AlwaysUseChunkedReader = false;
+        public static bool AllowLargeFiles = false;
+        public static long LargeFileLimit = int.MaxValue;
     }
 }
