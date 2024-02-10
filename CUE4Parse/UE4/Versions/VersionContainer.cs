@@ -98,7 +98,6 @@ namespace CUE4Parse.UE4.Versions
             Options["StaticMesh.KeepMobileMinLODSettingOnDesktop"] = false;
 
             // skips
-            Options["InstancedStaticMeshComponent.Broken"] = false;
             Options["StaticMeshComponent.Broken"] = false;
 
             if (_optionOverrides == null) return;

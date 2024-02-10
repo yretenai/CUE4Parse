@@ -14,7 +14,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
         {
             base.Deserialize(Ar, validPos);
 
-            if (Ar.Versions["InstancedStaticMeshComponent.Broken"]) {
+            if (Ar.Versions["StaticMeshComponent.Broken"]) {
                 return;
             }
 
@@ -34,7 +34,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
                         break;
                 }
             }
-            
+
             var bCooked = false;
             if (FFortniteMainBranchObjectVersion.Get(Ar) >= FFortniteMainBranchObjectVersion.Type.SerializeInstancedStaticMeshRenderData ||
                 FEditorObjectVersion.Get(Ar) >= FEditorObjectVersion.Type.SerializeInstancedStaticMeshRenderData)
