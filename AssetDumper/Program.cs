@@ -176,6 +176,8 @@ public static class Program {
             Globals.SkipObjectClasses.Add("MapBuildDataRegistry");
             Globals.SkipObjectClasses.Add("MovieSceneCompiledData");
             Globals.SkipObjectClasses.Add("MovieSceneEventParameters");
+            Globals.SkipObjectClasses.Add("MovieSceneEventSection");
+            Globals.SkipObjectClasses.Add("LevelSequence");
             Globals.SkipObjectClasses.Add("TimelineComponent");
             Globals.SkipObjectClasses.Add("NiagaraScript");
         }
