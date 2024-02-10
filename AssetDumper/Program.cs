@@ -51,6 +51,7 @@ public static class Program {
         }
 
         Globals.WarnMissingImportPackage = false;
+        Globals.AllowLargeFiles = true;
 
         Oodle.LoadOodleDll(Environment.CurrentDirectory);
 
