@@ -50,7 +50,7 @@ public static class Program {
             return;
         }
 
-        Globals.WarnMissingImportPackage = false;
+        Globals.WarnMissingImportPackage = true;
         Globals.AllowLargeFiles = true;
 
         Oodle.LoadOodleDll(Environment.CurrentDirectory);
@@ -170,6 +170,8 @@ public static class Program {
         }
 
         await Provider.MountAsync();
+
+        Provider.LoadVirtualPaths();
 
         Globals.SkipObjectClasses.UnionWith(flags.SkipClasses);
 
