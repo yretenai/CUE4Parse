@@ -86,6 +86,7 @@ public static class Program {
                 flags.Game = version;
             } else {
                 Log.Error("Could not autodetect version");
+                return;
             }
         }
 
