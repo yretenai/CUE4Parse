@@ -42,6 +42,17 @@ using SkiaSharp;
 
 namespace AssetDumper;
 
+public record UnrealVersionInfo {
+    public int MajorVersion { get; set; }
+    public int MinorVersion { get; set; }
+    public int PatchVersion { get; set; }
+    public int Changelist { get; set; }
+    public int CompatibleChangelist { get; set; }
+    public int IsLicenseeVersion { get; set; }
+    public int IsPromotedBuild { get; set; }
+    public string? BranchName { get; set; }
+}
+
 public static class Program {
     [SuppressMessage("ReSharper.DPA", "DPA0001: Memory allocation issues")]
     public static async Task Main() {
@@ -70,7 +81,12 @@ public static class Program {
                     .CreateLogger();
 
         if (flags.Game == EGame.GAME_AUTODETECT) {
-            FindVersion(flags);
+            if (FindVersion(flags, out var version)) {
+                Log.Information("Detected version as {Version}", version);
+                flags.Game = version;
+            } else {
+                Log.Error("Could not autodetect version");
+            }
         }
 
         if (!flags.Dry) {
@@ -655,41 +671,64 @@ public static class Program {
         return false;
     }
 
-    private static void FindVersion(Flags flags) {
+    private static bool FindVersion(Flags flags, out EGame version) {
         var utf8signature = Signature.CreateSignature("00 2B 2B 55 45");
         var utf16signature = Signature.CreateSignature("00 2B 00 2B 00 55 00 45 00");
+        version = EGame.GAME_AUTODETECT;
         foreach (var path in Directory.GetFiles(flags.PakPath, "*", SearchOption.AllDirectories)) {
             if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory)) {
                 continue;
             }
             var ext = Path.GetExtension(path).ToLower();
-            if (!string.IsNullOrEmpty(ext) && ext != ".exe") {
+            if (!string.IsNullOrEmpty(ext)) {
                 continue;
             }
 
-            var executableData = File.ReadAllBytes(path).AsSpan();
-            foreach (var hit in Signature.FindSignaturesReverse(executableData, utf8signature)) {
-                var str = executableData[(hit + 1)..].ReadUTF8StringNonNull(64);
+            switch (ext) {
+                case ".exe": {
+                    var executableData = File.ReadAllBytes(path).AsSpan();
+                    foreach (var hit in Signature.FindSignaturesReverse(executableData, utf8signature)) {
+                        var str = executableData[(hit + 1)..].ReadUTF8StringNonNull(64);
 
-                if (TryParseUnrealVersion(str, out var version)) {
-                    Log.Information("Detected version as {Version}", version);
-                    flags.Game = version;
-                    return;
+                        if (TryParseUnrealVersion(str, out version)) {
+                            return true;
+                        }
+                    }
+
+                    foreach (var hit in Signature.FindSignaturesReverse(executableData, utf16signature)) {
+                        var str = executableData[(hit + 1)..].ReadUTF16StringNonNull(64);
+
+                        if (TryParseUnrealVersion(str, out version)) {
+                            return true;
+                        }
+                    }
+
+                    break;
                 }
-            }
+                case ".version": {
+                    try {
+                        var versionInfo = JsonConvert.DeserializeObject<UnrealVersionInfo>(File.ReadAllText(path));
+                        if (versionInfo == null) {
+                            continue;
+                        }
 
-            foreach (var hit in Signature.FindSignaturesReverse(executableData, utf16signature)) {
-                var str = executableData[(hit + 1)..].ReadUTF16StringNonNull(64);
+                        if (!string.IsNullOrEmpty(versionInfo.BranchName) && TryParseUnrealVersion(versionInfo.BranchName, out version)) {
+                            return true;
+                        }
 
-                if (TryParseUnrealVersion(str, out var version)) {
-                    Log.Information("Detected version as {Version}", version);
-                    flags.Game = version;
-                    return;
+                        var simulatedBranchName = $"++UE{versionInfo.MajorVersion}+Release-{versionInfo.MajorVersion}.{versionInfo.MinorVersion}_{versionInfo.CompatibleChangelist}";
+
+                        if (TryParseUnrealVersion(simulatedBranchName, out version)) {
+                            return true;
+                        }
+                    } catch {
+                        // ignored
+                    }
+                    break;
                 }
             }
         }
 
-        Log.Error("Could not autodetect version.");
-        Environment.Exit(1);
+        return false;
     }
 }
