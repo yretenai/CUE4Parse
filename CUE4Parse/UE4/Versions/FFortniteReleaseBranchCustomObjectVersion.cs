@@ -3,6 +3,7 @@ using CUE4Parse.UE4.Readers;
 
 namespace CUE4Parse.UE4.Versions;
 
+// Custom serialization version for changes made in the //Fortnite/Release-XX.XX stream
 public static class FFortniteReleaseBranchCustomObjectVersion
 {
     public enum Type
@@ -43,6 +44,9 @@ public static class FFortniteReleaseBranchCustomObjectVersion
         // Enable SkipOnlyEditorOnly style cooking of NaniteOverrideMaterial
         NaniteMaterialOverrideUsesEditorOnly,
 
+        // Store game thread particles data in single precision
+        SinglePrecisionParticleData,
+
         // -----<new versions can be added above this line>-------------------------------------------------
         VersionPlusOne,
         LatestVersion = VersionPlusOne - 1
@@ -62,6 +66,9 @@ public static class FFortniteReleaseBranchCustomObjectVersion
             < EGame.GAME_UE5_0 => Type.DisableLevelset_v14_10,
             < EGame.GAME_UE5_1 => Type.ChaosKinematicTargetRemoveScale,
             < EGame.GAME_UE5_2 => Type.ActorComponentUCSModifiedPropertiesSparseStorage,
+            < EGame.GAME_UE5_3 => Type.RemoveUselessLandscapeMeshesCookedCollisionData,
+            < EGame.GAME_UE5_4 => Type.NaniteMaterialOverrideUsesEditorOnly,
+            < EGame.GAME_UE5_5 => Type.SinglePrecisionParticleData,
             _ => Type.LatestVersion
         };
     }

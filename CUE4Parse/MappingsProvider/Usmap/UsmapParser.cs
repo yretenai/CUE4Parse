@@ -108,7 +108,7 @@ public class UsmapParser
         {
             var enumName = Ar.ReadName(nameLut)!;
 
-            var enumNamesSize = Ar.Read<byte>();
+            var enumNamesSize = Ar.Version >= EUsmapVersion.LargeEnums ? Ar.Read<ushort>() : Ar.Read<byte>();
             var enumNames = new List<(long, string)>(enumNamesSize);
             for (var j = 0; j < enumNamesSize; j++)
             {
