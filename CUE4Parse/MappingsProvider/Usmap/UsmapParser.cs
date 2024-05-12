@@ -73,7 +73,7 @@ public class UsmapParser
             }
             case EUsmapCompressionMethod.Oodle:
             {
-                OodleHelper.Decompress(Ar.ReadBytes((int) compSize), 0, (int) compSize, data, 0, (int) decompSize);
+                Oodle.Decompress(Ar.ReadBytes((int) compSize), 0, (int) compSize, data, 0, (int) decompSize);
                 break;
             }
             case EUsmapCompressionMethod.Brotli:

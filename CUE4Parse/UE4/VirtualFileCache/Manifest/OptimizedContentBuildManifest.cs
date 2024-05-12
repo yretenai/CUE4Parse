@@ -49,8 +49,10 @@ namespace CUE4Parse.UE4.VirtualFileCache.Manifest
                 case EManifestStorageFlags.Compressed:
                 {
                     data = new byte[dataSizeUncompressed];
-                    var compressed = reader.ReadBytes(dataSizeCompressed);
-                    ZlibHelper.Decompress(compressed, 0, compressed.Length, data, 0, data.Length);
+					var compressed = reader.ReadBytes(dataSizeCompressed);
+					using var compressedStream = new MemoryStream(compressed);
+					using var zlib = new ZlibStream(compressedStream, CompressionMode.Decompress);
+					zlib.Read(data, 0, dataSizeUncompressed);
                     break;
                 }
                 case EManifestStorageFlags.Encrypted:

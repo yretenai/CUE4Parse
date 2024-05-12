@@ -38,7 +38,8 @@ namespace CUE4Parse.Compression
                     Buffer.BlockCopy(compressed, compressedOffset, uncompressed, uncompressedOffset, compressedSize);
                     return;
                 case CompressionMethod.Zlib:
-                    ZlibHelper.Decompress(compressed, compressedOffset, compressedSize, uncompressed, uncompressedOffset, uncompressedSize, reader);
+                    using var zlib = new ZlibStream(srcStream, CompressionMode.Decompress);
+                    zlib.Read(uncompressed, uncompressedOffset, uncompressedSize);
                     return;
                 case CompressionMethod.Gzip:
                     var gzip = new GZipStream(srcStream, CompressionMode.Decompress);
@@ -46,7 +47,7 @@ namespace CUE4Parse.Compression
                     gzip.Dispose();
                     return;
                 case CompressionMethod.Oodle:
-                    OodleHelper.Decompress(compressed, compressedOffset, compressedSize, uncompressed, uncompressedOffset, uncompressedSize, reader);
+                    Oodle.Decompress(compressed, compressedOffset, compressedSize, uncompressed, uncompressedOffset, uncompressedSize, reader);
                     return;
                 case CompressionMethod.LZ4:
                     var uncompressedBuffer = new byte[uncompressedSize + uncompressedSize / 255 + 16]; // LZ4_compressBound(uncompressedSize)
