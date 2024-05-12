@@ -1,7 +1,9 @@
 using CUE4Parse.UE4.Assets.Exports.Nanite;
+using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Assets.Readers;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.Engine;
+using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 
@@ -30,7 +32,33 @@ namespace CUE4Parse.UE4.Assets.Exports.StaticMesh
 
             if (Ar.Game == EGame.GAME_HYENAS) Ar.Position += 1;
 
-            LODs = Ar.ReadArray(() => new FStaticMeshLODResources(Ar));
+            if (Ar.Game == EGame.GAME_Undawn)
+            {
+                var size = Ar.Read<int>();
+                LODs = new FStaticMeshLODResources[size];
+                for (int i = 0; i < size; i++)
+                {
+                    var savedPos = Ar.Position;
+                    var bulkData = new FByteBulkData(Ar);
+                    if (bulkData.Header.ElementCount > 0 && bulkData.Data != null)
+                    {
+                        var tempAr = new FByteArchive("StaticMeshLODResources", bulkData.Data, Ar.Versions);
+                        LODs[i] = new FStaticMeshLODResources(tempAr);
+                    }
+                    else
+                    {
+                        Ar.Position = savedPos;
+                        LODs[i] = new FStaticMeshLODResources(Ar);
+                    }
+                }
+            }
+            else
+            {
+                LODs = Ar.ReadArray(() => new FStaticMeshLODResources(Ar));
+            }
+
+            // In Fortnite S8, engine is 4.22, but has static mesh from 4.23.
+            // Comment this check out to fix.
             if (Ar.Game >= EGame.GAME_UE4_23)
             {
                 var numInlinedLODs = Ar.Read<byte>();
@@ -92,7 +120,7 @@ namespace CUE4Parse.UE4.Assets.Exports.StaticMesh
             }
 
             ScreenSize = new float[Ar.Game >= EGame.GAME_UE4_9 ? MAX_STATIC_LODS_UE4 : 4];
-            for (var i = 0; i < ScreenSize.Length; i++)
+            for (var i = 0; i < ScreenSize.Length; ++i)
             {
                 if (Ar.Game >= EGame.GAME_UE4_20) // FPerPlatformProperty
                 {
@@ -101,7 +129,7 @@ namespace CUE4Parse.UE4.Assets.Exports.StaticMesh
 
                 ScreenSize[i] = Ar.Read<float>();
 
-                if (Ar.Game == EGame.GAME_HogwartsLegacy) Ar.Position +=8;
+                if (Ar.Game == EGame.GAME_HogwartsLegacy) Ar.Position += 8;
             }
 
             if (Ar.Game == EGame.GAME_Borderlands3)

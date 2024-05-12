@@ -25,3 +25,23 @@ DLLEXPORT void nReadACLData(const acl::compressed_tracks& tracks, FVector* outPo
         context.decompress_tracks(writer);
     }
 }
+
+DLLEXPORT void nReadCurveACLData(const acl::compressed_tracks& tracks, float* outFloatKeys)
+{
+    uint32_t numSamples = tracks.get_num_samples_per_track();
+
+    float sampleRate = tracks.get_sample_rate();
+    float duration = tracks.get_finite_duration();
+
+    DecompContextDefault context;
+    context.initialize(tracks);
+
+    FCUE4ParseCurveWriter writer(outFloatKeys, numSamples);
+    for (uint32_t sampleIndex = 0; sampleIndex < numSamples; ++sampleIndex)
+    {
+        const float sample_time = rtm::scalar_min(float(sampleIndex) / sampleRate, duration);
+        context.seek(sample_time, acl::sample_rounding_policy::nearest);
+        writer.SampleIndex = sampleIndex;
+        context.decompress_tracks(writer);
+    }
+}

@@ -1,8 +1,11 @@
-using System;
+using System.IO;
+using System.IO.Compression;
+using CUE4Parse.UE4.Writers;
+
 using CUE4Parse_Conversion.UEFormat.Enums;
 using CUE4Parse_Conversion.UEFormat.Structs;
-using CUE4Parse.UE4.Writers;
-using Ionic.Zlib;
+using CUE4Parse.Compression;
+using OodleDotNet;
 using ZstdSharp;
 
 namespace CUE4Parse_Conversion.UEFormat;
@@ -13,8 +16,11 @@ public class UEFormatExport
     protected readonly FArchiveWriter Ar = new();
     protected ExporterOptions Options;
     private string ObjectName;
-    
-    private const int ZSTD_LEVEL = 6; // let user change eventually?
+
+    // TODO make user selectable
+    private const OodleCompressor OODLE_COMPRESSOR = OodleCompressor.Leviathan;
+    private const OodleCompressionLevel OODLE_COMPRESSION_LEVEL = OodleCompressionLevel.Fast;
+    private const int ZSTD_LEVEL = 6;
     
     protected UEFormatExport(string name, ExporterOptions options)
     {
@@ -30,7 +36,7 @@ public class UEFormatExport
         
         var compressedData = header.CompressionFormat switch
         {
-            EFileCompressionFormat.GZIP => GZipStream.CompressBuffer(data),
+            EFileCompressionFormat.GZIP => GzipCompress(data),
             EFileCompressionFormat.ZSTD => new Compressor(ZSTD_LEVEL).Wrap(data),
             _ => data
         };
@@ -38,5 +44,17 @@ public class UEFormatExport
         
         header.Serialize(archive);
         archive.Write(compressedData);
+    }
+
+    public static byte[] GzipCompress(byte[] src)
+    {
+        using var outStream = new MemoryStream();
+        using var srcStream = new MemoryStream(src);
+        using (var gzipStream = new GZipStream(outStream, CompressionMode.Compress))
+        {
+            srcStream.CopyTo(gzipStream);
+        }
+
+        return outStream.ToArray();
     }
 }

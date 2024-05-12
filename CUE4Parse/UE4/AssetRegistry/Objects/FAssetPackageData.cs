@@ -17,8 +17,9 @@ namespace CUE4Parse.UE4.AssetRegistry.Objects
         public readonly long DiskSize;
         public readonly FPackageFileVersion FileVersionUE;
         public readonly int FileVersionLicenseeUE = -1;
-        public readonly FCustomVersionContainer CustomVersions;
+        public readonly FCustomVersionContainer? CustomVersions;
         public readonly uint Flags;
+        public readonly string? ExtensionText;
 
         public FAssetPackageData(FAssetRegistryArchive Ar)
         {
@@ -48,11 +49,16 @@ namespace CUE4Parse.UE4.AssetRegistry.Objects
 
                 FileVersionLicenseeUE = Ar.Read<int>();
                 Flags = Ar.Read<uint>();
+                if (Ar.Game is EGame.GAME_MarvelRivals) Ar.Position += 4;
                 CustomVersions = new FCustomVersionContainer(Ar);
             }
             if (Ar.Header.Version >= FAssetRegistryVersionType.PackageImportedClasses)
             {
                 ImportedClasses = Ar.ReadArray(Ar.ReadFName);
+            }
+            if (Ar.Header.Version >= FAssetRegistryVersionType.AssetPackageDataHasExtension)
+            {
+                ExtensionText = Ar.ReadFString();
             }
         }
     }

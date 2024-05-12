@@ -9,6 +9,7 @@ using CUE4Parse_Conversion.Materials;
 using CUE4Parse_Conversion.Meshes.glTF;
 using CUE4Parse_Conversion.Meshes.PSK;
 using CUE4Parse_Conversion.Meshes.UEFormat;
+using CUE4Parse.UE4.Objects.PhysicsEngine;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using Serilog;
@@ -28,7 +29,15 @@ namespace CUE4Parse_Conversion.Meshes
                 Log.Logger.Warning($"Skeleton '{ExportName}' has no bone");
                 return;
             }
-
+            
+            if (Options.MeshFormat == EMeshFormat.UEFormat)
+            {
+                using var ueModelArchive = new FArchiveWriter();
+                new UEModel(originalSkeleton.Name, bones, originalSkeleton.Sockets, originalSkeleton.VirtualBones, Options).Save(ueModelArchive);
+                MeshLods.Add(new Mesh($"{PackagePath}.uemodel", ueModelArchive.GetBuffer(), []));
+                return;
+            }
+            
             using var Ar = new FArchiveWriter();
             string ext;
             switch (Options.MeshFormat)
@@ -41,10 +50,6 @@ namespace CUE4Parse_Conversion.Meshes
                     throw new NotImplementedException();
                 case EMeshFormat.OBJ:
                     throw new NotImplementedException();
-                case EMeshFormat.UEFormat:
-                    ext = "uemodel";
-                    new UEModel(originalSkeleton.Name, bones, originalSkeleton.Sockets, Options).Save(Ar);
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Options.MeshFormat), Options.MeshFormat, null);
             }
@@ -59,6 +64,14 @@ namespace CUE4Parse_Conversion.Meshes
             if (!originalMesh.TryConvert(out var convertedMesh) || convertedMesh.LODs.Count == 0)
             {
                 Log.Logger.Warning($"Mesh '{ExportName}' has no LODs");
+                return;
+            }
+            
+            if (Options.MeshFormat == EMeshFormat.UEFormat)
+            {
+                using var ueModelArchive = new FArchiveWriter();
+                new UEModel(originalMesh.Name, convertedMesh, originalMesh.BodySetup, Options).Save(ueModelArchive);
+                MeshLods.Add(new Mesh($"{PackagePath}.uemodel", ueModelArchive.GetBuffer(), []));
                 return;
             }
 
@@ -88,10 +101,6 @@ namespace CUE4Parse_Conversion.Meshes
                     case EMeshFormat.OBJ:
                         ext = "obj";
                         new Gltf(ExportName, lod, materialExports, Options).Save(Options.MeshFormat, Ar);
-                        break;
-                    case EMeshFormat.UEFormat:
-                        ext = "uemodel";
-                        new UEModel(originalMesh.Name, lod, Options).Save(Ar);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Options.MeshFormat), Options.MeshFormat, null);
@@ -129,6 +138,14 @@ namespace CUE4Parse_Conversion.Meshes
                 }
             }
 
+            if (Options.MeshFormat == EMeshFormat.UEFormat)
+            { 
+                using var ueModelArchive = new FArchiveWriter();
+                new UEModel(originalMesh.Name, convertedMesh, originalMesh.MorphTargets, totalSockets.ToArray(), originalMesh.PhysicsAsset, Options).Save(ueModelArchive);
+                MeshLods.Add(new Mesh($"{PackagePath}.uemodel", ueModelArchive.GetBuffer(), []));
+                return;
+            }
+
             var i = 0;
             for (var lodIndex = 0; lodIndex < convertedMesh.LODs.Count; lodIndex++)
             {
@@ -158,10 +175,6 @@ namespace CUE4Parse_Conversion.Meshes
                     case EMeshFormat.OBJ:
                         ext = "obj";
                         new Gltf(ExportName, lod, convertedMesh.RefSkeleton, materialExports, Options).Save(Options.MeshFormat, Ar);
-                        break;
-                    case EMeshFormat.UEFormat:
-                        ext = "uemodel";
-                        new UEModel(originalMesh.Name, lod, convertedMesh.RefSkeleton, originalMesh.MorphTargets, totalSockets.ToArray(), lodIndex, Options).Save(Ar);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Options.MeshFormat), Options.MeshFormat, null);
