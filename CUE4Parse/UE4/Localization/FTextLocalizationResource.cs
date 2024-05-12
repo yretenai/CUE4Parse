@@ -25,8 +25,7 @@ namespace CUE4Parse.UE4.Localization
             }
             else // Legacy LocRes files lack the magic number, assume that's what we're dealing with, and seek back to the start of the file
             {
-                Ar.Position = 0;
-                Log.Warning($"LocRes '{Ar.Name}' failed the magic number check! Assuming this is a legacy resource");
+                return;
             }
 
             // Is this LocRes file too new to load?

@@ -154,7 +154,14 @@ public static class Program {
                     }
 
                     foreach (var key in keys) {
-                        if (reader.TestAesKey(key)) {
+                        var valid = reader.TestAesKey(key);
+
+                        if (!valid && flags.Game == EGame.GAME_Snowbreak) {
+                            var newKey = AbstractAesVfsReader.ConvertSnowbreakAes(reader.Name, key);
+                            valid = reader.TestAesKey(newKey);
+                        }
+
+                        if (valid) {
                             Log.Information("Validated Key {Guid}={Key}", reader.EncryptionKeyGuid, key);
                             foundKeys[reader.EncryptionKeyGuid] = key;
                         }
