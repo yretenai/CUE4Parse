@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-
+using System.IO.Compression;
 using CUE4Parse.Compression;
 using CUE4Parse.UE4.Readers;
 
@@ -51,8 +51,8 @@ namespace CUE4Parse.UE4.VirtualFileCache.Manifest
                     data = new byte[dataSizeUncompressed];
 					var compressed = reader.ReadBytes(dataSizeCompressed);
 					using var compressedStream = new MemoryStream(compressed);
-					using var zlib = new ZlibStream(compressedStream, CompressionMode.Decompress);
-					zlib.Read(data, 0, dataSizeUncompressed);
+					using var zlib = new ZLibStream(compressedStream, CompressionMode.Decompress);
+					zlib.ReadExactly(data.AsSpan(0, dataSizeUncompressed));
                     break;
                 }
                 case EManifestStorageFlags.Encrypted:

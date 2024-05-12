@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -54,7 +55,7 @@ namespace CUE4Parse.FileProvider.Objects
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual bool TryCreateReader(out FArchive? reader)
+        public virtual bool TryCreateReader([MaybeNullWhen(false)] out FArchive reader)
         {
             try
             {

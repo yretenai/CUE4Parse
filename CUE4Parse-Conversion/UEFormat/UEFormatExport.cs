@@ -4,8 +4,6 @@ using CUE4Parse.UE4.Writers;
 
 using CUE4Parse_Conversion.UEFormat.Enums;
 using CUE4Parse_Conversion.UEFormat.Structs;
-using CUE4Parse.Compression;
-using OodleDotNet;
 using ZstdSharp;
 
 namespace CUE4Parse_Conversion.UEFormat;
@@ -18,10 +16,8 @@ public class UEFormatExport
     private string ObjectName;
 
     // TODO make user selectable
-    private const OodleCompressor OODLE_COMPRESSOR = OodleCompressor.Leviathan;
-    private const OodleCompressionLevel OODLE_COMPRESSION_LEVEL = OodleCompressionLevel.Fast;
     private const int ZSTD_LEVEL = 6;
-    
+
     protected UEFormatExport(string name, ExporterOptions options)
     {
         ObjectName = name;
@@ -33,7 +29,7 @@ public class UEFormatExport
         var header = new FUEFormatHeader(Identifier, ObjectName, Options.CompressionFormat);
         var data = Ar.GetBuffer();
         header.UncompressedSize = data.Length;
-        
+
         var compressedData = header.CompressionFormat switch
         {
             EFileCompressionFormat.GZIP => GzipCompress(data),
@@ -41,7 +37,7 @@ public class UEFormatExport
             _ => data
         };
         header.CompressedSize = compressedData.Length;
-        
+
         header.Serialize(archive);
         archive.Write(compressedData);
     }

@@ -365,19 +365,26 @@ namespace CUE4Parse.FileProvider
             if (TryFindGameFile("/Game/Config/DefaultGame.ini", out var defaultGame))
             {
                 if (defaultGame is VfsEntry { Vfs: IAesVfsReader aesVfsReader }) DefaultGame.EncryptionKeyGuid = aesVfsReader.EncryptionKeyGuid;
-                if (defaultGame.TryCreateReader(out var gameAr)) DefaultGame.Read(new StreamReader(gameAr));
-                gameAr?.Dispose();
+                if (defaultGame.TryCreateReader(out var gameAr)) {
+                    using var reader = new StreamReader(gameAr);
+                    DefaultGame.Read(reader);
+                    gameAr.Dispose();
+                }
             }
             if (TryFindGameFile("/Game/Config/DefaultEngine.ini", out var defaultEngine))
             {
                 if (defaultEngine is VfsEntry { Vfs: IAesVfsReader aesVfsReader }) DefaultEngine.EncryptionKeyGuid = aesVfsReader.EncryptionKeyGuid;
-                if (defaultEngine.TryCreateReader(out var engineAr)) DefaultEngine.Read(new StreamReader(engineAr));
+                if (defaultEngine.TryCreateReader(out var engineAr)) {
+                    using var reader = new StreamReader(engineAr);
+                    DefaultGame.Read(reader);
+                    engineAr.Dispose();
+                }
                 engineAr?.Dispose();
 
                 foreach (var token in DefaultEngine.Sections.FirstOrDefault(s => s.Name == "ConsoleVariables")?.Tokens ?? [])
                 {
                     if (token is not InstructionToken it) continue;
-                    var boolValue = it.Value.Equals("1");
+                    var boolValue = it.Value.Equals('1');
 
                     switch (it.Key)
                     {
@@ -610,7 +617,7 @@ namespace CUE4Parse.FileProvider
             Files.TryGetValue(file.PathWithoutExtension + ".ubulk", out var ubulkFile);
             Files.TryGetValue(file.PathWithoutExtension + ".uptnl", out var uptnlFile);
             if (ubulkFile?.HasValidSize() == false)
-                ubulkFile = null; 
+                ubulkFile = null;
             if (uptnlFile?.HasValidSize() == false)
                 uptnlFile = null;
             var uassetTask = file.TryCreateReaderAsync().ConfigureAwait(false);

@@ -5,6 +5,7 @@ using CUE4Parse.Utils;
 using Serilog;
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -50,7 +51,7 @@ namespace CUE4Parse.Compression
                         yield return "*oo2core*winuwparm64*.dll";
                     else if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
                         yield return "*oo2core*win32*.dll";
-                    
+
                     yield return "*oo2core*win64*.dll";
 
                     yield break;
@@ -64,7 +65,7 @@ namespace CUE4Parse.Compression
                     else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm ||
                         RuntimeInformation.ProcessArchitecture == Architecture.Armv6)
                         yield return "*oo2core*linuxarm32*.so*";
-                    
+
                     yield return "*oo2core*linux64*.so*";
 
                     yield break;
@@ -86,6 +87,7 @@ namespace CUE4Parse.Compression
 
         public static bool IsReady => DecompressDelegate != null;
         public static OodleLZ_Decompress? DecompressDelegate { get; set; }
+        public static OodleLZDecoder_MemorySizeNeeded? MemorySizeNeededDelegate { get; set; }
 
         public static bool TryFindOodleDll(string? path, [MaybeNullWhen(false)] out string result)
         {
@@ -108,7 +110,7 @@ namespace CUE4Parse.Compression
         {
             if (IsReady)
                 return true;
-            
+
             path ??= Environment.CurrentDirectory;
 
             if (Directory.Exists(path) && new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory))
@@ -128,7 +130,12 @@ namespace CUE4Parse.Compression
             if (!NativeLibrary.TryLoad(path, out var handle))
                 return false;
 
-            if (!NativeLibrary.TryGetExport(handle, nameof(OodleLZ_Decompress), out var address))
+            if (!NativeLibrary.TryGetExport(handle, nameof(OodleLZDecoder_MemorySizeNeeded), out var address))
+                return false;
+
+            MemorySizeNeededDelegate = Marshal.GetDelegateForFunctionPointer<OodleLZDecoder_MemorySizeNeeded>(address);
+
+            if (!NativeLibrary.TryGetExport(handle, nameof(OodleLZ_Decompress), out address))
                 return false;
 
             DecompressDelegate = Marshal.GetDelegateForFunctionPointer<OodleLZ_Decompress>(address);
@@ -140,7 +147,7 @@ namespace CUE4Parse.Compression
         {
             if (!IsReady)
                 LoadOodleDll();
-            
+
             if (DecompressDelegate == null)
             {
                 if (reader != null)
@@ -153,8 +160,11 @@ namespace CUE4Parse.Compression
             var outputSlice = output.Slice(outputOffset, outputSize);
             using var inPin = inputSlice.Pin();
             using var outPin = outputSlice.Pin();
+            var blockDecoderMemorySizeNeeded = MemorySizeNeededDelegate(-1, -1);
+            using var pool = MemoryPool<byte>.Shared.Rent(blockDecoderMemorySizeNeeded);
+            using var poolPin = pool.Memory.Pin();
 
-            var decodedSize = DecompressDelegate(inPin.Pointer, inputSlice.Length, outPin.Pointer, outputSlice.Length);
+            var decodedSize = DecompressDelegate((byte*) inPin.Pointer, input.Length, (byte*) outPin.Pointer, output.Length, true, false, OodleLZ_Verbosity.Minimal, null, 0, null, null, (byte*) poolPin.Pointer, blockDecoderMemorySizeNeeded, OodleLZ_Decode_ThreadPhase.Unthreaded);
 
             if (decodedSize <= 0)
             {
@@ -188,11 +198,10 @@ namespace CUE4Parse.Compression
         }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public unsafe delegate int OodleLZ_Decompress(void* srcBuf, int srcSize, void* rawBuf, int rawSize,
-            int fuzzSafe = 1, int checkCRC = 0, OodleLZ_Verbosity verbosity = OodleLZ_Verbosity.None,
-            void* decBufBase = null, int decBufSize = 0, void* fpCallback = null, void* callbackUserData = null,
-            void* decoderMemory = null, int decoderMemorySize = 0,
-            OodleLZ_Decode_ThreadPhase threadPhase = OodleLZ_Decode_ThreadPhase.Unthreaded);
+        public unsafe delegate int OodleLZ_Decompress(byte* srcBuf, long srcSize, byte* rawBuf, long rawSize, [MarshalAs(UnmanagedType.I4)] bool fuzzSafe, [MarshalAs(UnmanagedType.I4)] bool checkCRC, OodleLZ_Verbosity verbosity, byte* decBufBase, long decBufSize, void* fpCallback, void* callbackUserData, byte* decoderMemory, long decoderMemorySize, OodleLZ_Decode_ThreadPhase threadPhase);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public unsafe delegate int OodleLZDecoder_MemorySizeNeeded(int compressor, long size);
 
         public static async Task<bool> DownloadOodleDll(string? path = null)
         {

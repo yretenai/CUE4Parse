@@ -244,7 +244,7 @@ namespace CUE4Parse.UE4.IO
                 else reader = ContainerStreams[partitionIndex];
 
                 reader.Position = partitionOffset;
-                reader.Read(compressedBuffer, 0, (int) rawSize);
+                reader.ReadExactly(compressedBuffer, 0, (int) rawSize);
                 compressedBuffer = DecryptIfEncrypted(compressedBuffer, 0, (int) rawSize);
 
                 byte[] src;

@@ -33,7 +33,7 @@ namespace CUE4Parse.UE4.Assets.Objects
                 Log.Debug($"bulk data in .uexp file (Force Inline Payload) (flags={BulkDataFlags}, pos={Header.OffsetInFile}, size={Header.SizeOnDisk}))");
 #endif
                 Data = new byte[Header.ElementCount];
-                Ar.Read(Data, 0, Header.ElementCount);
+                Ar.ReadExactly(Data);
             }
             else if (BulkDataFlags.HasFlag(BULKDATA_OptionalPayload))
             {
@@ -44,7 +44,7 @@ namespace CUE4Parse.UE4.Assets.Objects
 
                 Data = new byte[Header.ElementCount];
                 uptnlAr.Position = Header.OffsetInFile;
-                uptnlAr.Read(Data, 0, Header.ElementCount);
+                uptnlAr.ReadExactly(Data);
             }
             else if (BulkDataFlags.HasFlag(BULKDATA_PayloadInSeperateFile))
             {
@@ -55,7 +55,7 @@ namespace CUE4Parse.UE4.Assets.Objects
 
                 Data = new byte[Header.ElementCount];
                 ubulkAr.Position = Header.OffsetInFile;
-                ubulkAr.Read(Data, 0, Header.ElementCount);
+                ubulkAr.ReadExactly(Data);
             }
             else if (BulkDataFlags.HasFlag(BULKDATA_PayloadAtEndOfFile))
             {
@@ -69,7 +69,7 @@ namespace CUE4Parse.UE4.Assets.Objects
                 {
                     Data = new byte[Header.ElementCount];
                     Ar.Position = Header.OffsetInFile;
-                    Ar.Read(Data, 0, Header.ElementCount);
+                    Ar.ReadExactly(Data);
                 }
                 else throw new ParserException(Ar, $"Failed to read PayloadAtEndOfFile, {Header.OffsetInFile} is out of range");
 

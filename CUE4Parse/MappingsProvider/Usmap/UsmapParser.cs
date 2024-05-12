@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -68,7 +69,7 @@ public class UsmapParser
             {
                 if (compSize != decompSize)
                     throw new ParserException("No compression: Compression size must be equal to decompression size");
-                _ = Ar.Read(data, 0, (int) compSize);
+                Ar.ReadExactly(data);
                 break;
             }
             case EUsmapCompressionMethod.Oodle:

@@ -37,15 +37,16 @@ namespace CUE4Parse.Compression
                 case CompressionMethod.None:
                     Buffer.BlockCopy(compressed, compressedOffset, uncompressed, uncompressedOffset, compressedSize);
                     return;
-                case CompressionMethod.Zlib:
-                    using var zlib = new ZlibStream(srcStream, CompressionMode.Decompress);
-                    zlib.Read(uncompressed, uncompressedOffset, uncompressedSize);
+                case CompressionMethod.Zlib: {
+                    using var zlib = new ZLibStream(srcStream, CompressionMode.Decompress);
+                    zlib.ReadExactly(uncompressed.AsSpan(uncompressedOffset, uncompressedSize));
                     return;
-                case CompressionMethod.Gzip:
-                    var gzip = new GZipStream(srcStream, CompressionMode.Decompress);
-                    gzip.Read(uncompressed, uncompressedOffset, uncompressedSize);
-                    gzip.Dispose();
+                }
+                case CompressionMethod.Gzip: {
+                    using var gzip = new GZipStream(srcStream, CompressionMode.Decompress);
+                    gzip.ReadExactly(uncompressed.AsSpan(uncompressedOffset, uncompressedSize));
                     return;
+                }
                 case CompressionMethod.Oodle:
                     Oodle.Decompress(compressed, compressedOffset, compressedSize, uncompressed, uncompressedOffset, uncompressedSize, reader);
                     return;
@@ -68,9 +69,8 @@ namespace CUE4Parse.Compression
                     return;
                 case CompressionMethod.Zstd:
                 {
-                    var compressionStream = new DecompressionStream(srcStream);
-                    compressionStream.Read(uncompressed, uncompressedOffset, uncompressedSize);
-                    compressionStream.Dispose();
+                    using var compressionStream = new DecompressionStream(srcStream);
+                    compressionStream.ReadExactly(uncompressed.AsSpan(uncompressedOffset, uncompressedSize));
                     return;
                 }
                 default:

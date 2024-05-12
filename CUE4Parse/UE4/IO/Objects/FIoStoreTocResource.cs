@@ -31,7 +31,7 @@ namespace CUE4Parse.UE4.IO.Objects
         public FIoStoreTocResource(FArchive Ar, EIoStoreTocReadOptions readOptions = EIoStoreTocReadOptions.Default)
         {
             var streamBuffer = new byte[Ar.Length];
-            Ar.Read(streamBuffer, 0, streamBuffer.Length);
+            Ar.ReadExactly(streamBuffer);
             using var archive = new FByteArchive(Ar.Name, streamBuffer, Ar.Versions);
 
             // Header

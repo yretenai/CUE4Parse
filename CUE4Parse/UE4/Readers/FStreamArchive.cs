@@ -39,7 +39,7 @@ namespace CUE4Parse.UE4.Readers
         public override byte[] ReadBytes(int length)
         {
             var result = new byte[length];
-            _baseStream.Read(result, 0, length);
+            _baseStream.ReadExactly(result, 0, length);
             return result;
         }
 
