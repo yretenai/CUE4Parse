@@ -52,14 +52,14 @@ public class WorldExporter : ExporterBase {
 
         var overrideHdr = new VChunkHeader {
             DataCount = overrideMaterials.Count,
-            DataSize = 72,
+            DataSize = 264,
         };
-        Ar.SerializeChunkHeader(overrideHdr, "INSTMATERIAL");
+        Ar.SerializeChunkHeader(overrideHdr, "INSTMATERIAL::2");
 
         foreach (var (actorId, materialId, overrideMaterial) in overrideMaterials) {
             Ar.Write(actorId);
             Ar.Write(materialId);
-            Ar.Write(overrideMaterial, 64);
+            Ar.Write(overrideMaterial, 256);
         }
 
         var landscapeHdr = new VChunkHeader {
