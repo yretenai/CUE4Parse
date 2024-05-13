@@ -85,7 +85,9 @@ namespace CUE4Parse.Compression
             }
         }
 
-        public static bool IsReady => DecompressDelegate != null;
+        [MemberNotNullWhen(true, nameof(DecompressDelegate))]
+        [MemberNotNullWhen(true, nameof(MemorySizeNeededDelegate))]
+        public static bool IsReady => DecompressDelegate != null && MemorySizeNeededDelegate != null;
         public static OodleLZ_Decompress? DecompressDelegate { get; set; }
         public static OodleLZDecoder_MemorySizeNeeded? MemorySizeNeededDelegate { get; set; }
 
@@ -145,15 +147,14 @@ namespace CUE4Parse.Compression
         public static unsafe void Decompress(Memory<byte> input, int inputOffset, int inputSize,
             Memory<byte> output, int outputOffset, int outputSize, FArchive? reader = null)
         {
-            if (!IsReady)
+            if (!IsReady) {
                 LoadOodleDll();
+                if (!IsReady) {
+                    if (reader != null)
+                        throw new OodleException(reader, "Oodle library not loaded");
 
-            if (DecompressDelegate == null)
-            {
-                if (reader != null)
-                    throw new OodleException(reader, "Oodle library not loaded");
-
-                throw new OodleException("Oodle library not loaded");
+                    throw new OodleException("Oodle library not loaded");
+                }
             }
 
             var inputSlice = input.Slice(inputOffset, inputSize);
@@ -164,7 +165,7 @@ namespace CUE4Parse.Compression
             using var pool = MemoryPool<byte>.Shared.Rent(blockDecoderMemorySizeNeeded);
             using var poolPin = pool.Memory.Pin();
 
-            var decodedSize = DecompressDelegate((byte*) inPin.Pointer, input.Length, (byte*) outPin.Pointer, output.Length, true, false, OodleLZ_Verbosity.Minimal, null, 0, null, null, (byte*) poolPin.Pointer, blockDecoderMemorySizeNeeded, OodleLZ_Decode_ThreadPhase.Unthreaded);
+            var decodedSize = DecompressDelegate((byte*) inPin.Pointer, input.Length, (byte*) outPin.Pointer, output.Length, 1, 0, OodleLZ_Verbosity.Minimal, null, 0, null, null, (byte*) poolPin.Pointer, blockDecoderMemorySizeNeeded, OodleLZ_Decode_ThreadPhase.Unthreaded);
 
             if (decodedSize <= 0)
             {
@@ -198,7 +199,7 @@ namespace CUE4Parse.Compression
         }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public unsafe delegate int OodleLZ_Decompress(byte* srcBuf, long srcSize, byte* rawBuf, long rawSize, [MarshalAs(UnmanagedType.I4)] bool fuzzSafe, [MarshalAs(UnmanagedType.I4)] bool checkCRC, OodleLZ_Verbosity verbosity, byte* decBufBase, long decBufSize, void* fpCallback, void* callbackUserData, byte* decoderMemory, long decoderMemorySize, OodleLZ_Decode_ThreadPhase threadPhase);
+        public unsafe delegate int OodleLZ_Decompress(byte* srcBuf, long srcSize, byte* rawBuf, long rawSize, [MarshalAs(UnmanagedType.I4)] int fuzzSafe, [MarshalAs(UnmanagedType.I4)] int checkCRC, OodleLZ_Verbosity verbosity, byte* decBufBase, long decBufSize, void* fpCallback, void* callbackUserData, byte* decoderMemory, long decoderMemorySize, OodleLZ_Decode_ThreadPhase threadPhase);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public unsafe delegate int OodleLZDecoder_MemorySizeNeeded(int compressor, long size);
