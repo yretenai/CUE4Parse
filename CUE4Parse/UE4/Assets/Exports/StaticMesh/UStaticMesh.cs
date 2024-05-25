@@ -30,6 +30,7 @@ namespace CUE4Parse.UE4.Assets.Exports.StaticMesh
 
             var stripDataFlags = Ar.Read<FStripDataFlags>();
             bCooked = Ar.ReadBoolean();
+            if (Ar.Game == EGame.GAME_Farlight84) Ar.Position += 1; // Extra byte?
             BodySetup = new FPackageIndex(Ar);
 
             if (Ar.Versions["StaticMesh.HasNavCollision"])
@@ -54,7 +55,7 @@ namespace CUE4Parse.UE4.Assets.Exports.StaticMesh
             Sockets = Ar.ReadArray(() => new FPackageIndex(Ar));
             RenderData = new FStaticMeshRenderData(Ar, bCooked);
 
-            if (bCooked && Ar.Game is >= EGame.GAME_UE4_20 and < EGame.GAME_UE5_0)
+            if (bCooked && Ar.Game is >= EGame.GAME_UE4_20 and < EGame.GAME_UE5_0 && Ar.Game != EGame.GAME_DreamStar) // DS removed this for some reason
             {
                 var bHasOccluderData = Ar.ReadBoolean();
                 if (bHasOccluderData)
@@ -95,6 +96,7 @@ namespace CUE4Parse.UE4.Assets.Exports.StaticMesh
             }
 
             if (Ar.Game == EGame.GAME_OutlastTrials) Ar.Position += 1;
+            if (Ar.Game == EGame.GAME_Farlight84) Ar.Position += 4;
         }
 
         protected internal override void WriteJson(JsonWriter writer, JsonSerializer serializer)

@@ -102,7 +102,7 @@ public static class PlatformDeswizzlers
         var rowSize = widthInBlocks * formatInfo.BlockBytes;
         var unpaddedRowSize = formatInfo.GetBlockCountForWidth(mip.SizeX) * formatInfo.BlockBytes;
         var unpaddedTextureData = new byte[heightInBlocks * unpaddedRowSize];
-        for (int rowIndex = 0; rowIndex < heightInBlocks; rowIndex++)
+        for (var rowIndex = 0; rowIndex < heightInBlocks; rowIndex++)
         {
             Array.Copy(textureData, rowIndex * rowSize, unpaddedTextureData, rowIndex * unpaddedRowSize, unpaddedRowSize);
         }
@@ -125,7 +125,8 @@ public static class PlatformDeswizzlers
     }
 
     // https://github.com/tge-was-taken/GFD-Studio/blob/master/GFDLibrary/Textures/Swizzle/PS4SwizzleAlgorithm.cs
-    public static byte[] DeswizzlePS4(byte[] data, FTexture2DMipMap mip, FPixelFormatInfo formatInfo)
+    // Used for both Xbox and Playstation textures
+    public static byte[] DeswizzleXBPS(byte[] data, FTexture2DMipMap mip, FPixelFormatInfo formatInfo)
     {
         var outData = new byte[data.Length];
 

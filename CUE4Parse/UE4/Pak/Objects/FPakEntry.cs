@@ -21,7 +21,7 @@ namespace CUE4Parse.UE4.Pak.Objects
         public readonly long CompressedSize;
         public readonly long UncompressedSize;
         public sealed override CompressionMethod CompressionMethod { get; }
-        public readonly FPakCompressedBlock[] CompressionBlocks = Array.Empty<FPakCompressedBlock>();
+        public readonly FPakCompressedBlock[] CompressionBlocks = [];
         public readonly uint Flags;
         public override bool IsEncrypted => (Flags & Flag_Encrypted) == Flag_Encrypted;
         public bool IsDeleted => (Flags & Flag_Deleted) == Flag_Deleted;
@@ -118,7 +118,7 @@ namespace CUE4Parse.UE4.Pak.Objects
 
                 CompressionMethod = compressionMethodIndex == -1 ? CompressionMethod.Unknown : reader.Info.CompressionMethods[compressionMethodIndex];
             }
-            else if (reader.Info.Version == PakFile_Version_FNameBasedCompressionMethod && !reader.Info.IsSubVersion)
+            else if (reader.Info is { Version: PakFile_Version_FNameBasedCompressionMethod, IsSubVersion: false })
             {
                 CompressionMethod = reader.Info.CompressionMethods[Ar.Read<byte>()];
             }
@@ -134,7 +134,7 @@ namespace CUE4Parse.UE4.Pak.Objects
             {
                 if (CompressionMethod != CompressionMethod.None)
                     CompressionBlocks = Ar.ReadArray<FPakCompressedBlock>();
-                Flags = (uint)Ar.ReadByte();
+                Flags = (uint) Ar.ReadByte();
                 CompressionBlockSize = Ar.Read<uint>();
             }
 
@@ -160,7 +160,7 @@ namespace CUE4Parse.UE4.Pak.Objects
             Path = path;
 
             // UE4 reference: FPakFile::DecodePakEntry()
-            uint bitfield = *(uint*) data;
+            var bitfield = *(uint*) data;
             data += sizeof(uint);
 
             uint compressionBlockSize;
@@ -196,6 +196,7 @@ namespace CUE4Parse.UE4.Pak.Objects
             }
 
             if (reader.Ar.Game == GAME_Snowbreak) Offset ^= 0x1F1E1D1C;
+            if (reader.Ar.Game is GAME_QQ or GAME_DreamStar) Offset += 8;
 
             // Read the UncompressedSize.
             var bIsUncompressedSize32BitSafe = (bitfield & (1 << 30)) != 0;
@@ -279,7 +280,7 @@ namespace CUE4Parse.UE4.Pak.Objects
 
                 // compressedBlockOffset is the starting offset. Everything else can be derived from there.
                 var compressedBlockOffset = Offset + StructSize;
-                for (int compressionBlockIndex = 0; compressionBlockIndex < compressionBlocksCount; ++compressionBlockIndex)
+                for (var compressionBlockIndex = 0; compressionBlockIndex < compressionBlocksCount; ++compressionBlockIndex)
                 {
                     ref var compressedBlock = ref CompressionBlocks[compressionBlockIndex];
                     compressedBlock.CompressedStart = compressedBlockOffset;

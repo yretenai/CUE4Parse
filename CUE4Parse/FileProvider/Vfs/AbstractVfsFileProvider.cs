@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -15,8 +15,6 @@ using CUE4Parse.UE4.Objects.Core.Misc;
 using CUE4Parse.UE4.Pak;
 using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Versions;
-using CUE4Parse.UE4.VirtualFileCache;
-using CUE4Parse.UE4.VirtualFileCache.Manifest;
 using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.Utils;
 
@@ -43,6 +41,9 @@ namespace CUE4Parse.FileProvider.Vfs
         public IoGlobalData? GlobalData { get; private set; }
 
         public IAesVfsReader.CustomEncryptionDelegate? CustomEncryption { get; set; }
+        public event EventHandler<int>? VfsRegistered;
+        public event EventHandler<int>? VfsMounted;
+        public event EventHandler<int>? VfsUnmounted;
 
         protected AbstractVfsFileProvider(bool isCaseInsensitive = false, VersionContainer? versions = null) : base(isCaseInsensitive, versions)
         {
@@ -98,6 +99,7 @@ namespace CUE4Parse.FileProvider.Vfs
             _unloadedVfs[reader] = null;
             reader.IsConcurrent = true;
             reader.CustomEncryption = CustomEncryption;
+            VfsRegistered?.Invoke(reader, _unloadedVfs.Count);
         }
 
         public int Mount() => MountAsync().Result;
@@ -116,9 +118,7 @@ namespace CUE4Parse.FileProvider.Vfs
                 {
                     try
                     {
-                        // Ensure that the custom encryption delegate specified for the provider is also used for the reader
-                        reader.CustomEncryption = CustomEncryption;
-                        reader.MountTo(_files, IsCaseInsensitive);
+                        reader.MountTo(_files, IsCaseInsensitive, VfsMounted);
                         _unloadedVfs.TryRemove(reader, out _);
                         _mountedVfs[reader] = null;
                         Interlocked.Increment(ref countNewMounts);
@@ -164,7 +164,7 @@ namespace CUE4Parse.FileProvider.Vfs
                     {
                         try
                         {
-                            reader.MountTo(_files, IsCaseInsensitive, key);
+                            reader.MountTo(_files, IsCaseInsensitive, key, VfsMounted);
                             _unloadedVfs.TryRemove(reader, out _);
                             _mountedVfs[reader] = null;
                             Interlocked.Increment(ref countNewMounts);
@@ -211,6 +211,7 @@ namespace CUE4Parse.FileProvider.Vfs
                 {
                     _mountedVfs.TryRemove(reader, out _);
                     _unloadedVfs[reader] = null;
+                    VfsUnmounted?.Invoke(reader, _unloadedVfs.Count);
                 }
                 _keys.TryRemove(group.Key, out _);
                 _requiredKeys[group.Key] = null;
@@ -235,6 +236,7 @@ namespace CUE4Parse.FileProvider.Vfs
                 _requiredKeys[reader.EncryptionKeyGuid] = null;
                 _mountedVfs.TryRemove(reader, out _);
                 _unloadedVfs[reader] = null;
+                VfsUnmounted?.Invoke(reader, _unloadedVfs.Count);
             }
         }
         public void UnloadNonStreamedVfs()

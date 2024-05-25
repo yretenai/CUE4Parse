@@ -123,16 +123,16 @@ public static class TextureDecoder
         return null;
     }
 
-    private static void DecodeTexture(FTexture2DMipMap? mip, int sizeX, int sizeY, int sizeZ, EPixelFormat format, bool isNormalMap, ETexturePlatform platform, out byte[] data, out SKColorType colorType)
+    public static void DecodeTexture(FTexture2DMipMap? mip, int sizeX, int sizeY, int sizeZ, EPixelFormat format, bool isNormalMap, ETexturePlatform platform, out byte[] data, out SKColorType colorType)
     {
         if (mip?.BulkData.Data is not { Length: > 0 }) throw new ParserException("Supplied MipMap is null or has empty data!");
         if (PixelFormatUtils.PixelFormats.ElementAtOrDefault((int) format) is not { Supported: true } formatInfo || formatInfo.BlockBytes == 0) throw new NotImplementedException($"The supplied pixel format {format} is not supported!");
 
-        var isPS = platform == ETexturePlatform.Playstation;
+        var isXBPS = platform == ETexturePlatform.XboxAndPlaystation;
         var isNX = platform == ETexturePlatform.NintendoSwitch;
 
         // If the platform requires deswizzling, check if we should even try.
-        if (isPS || isNX)
+        if (isXBPS || isNX)
         {
             var blockSizeX = mip.SizeX / formatInfo.BlockSizeX;
             var blockSizeY = mip.SizeY / formatInfo.BlockSizeY;
@@ -143,7 +143,7 @@ public static class TextureDecoder
         var bytes = mip.BulkData.Data;
 
         // Handle deswizzling if necessary.
-        if (isPS) bytes = PlatformDeswizzlers.DeswizzlePS4(bytes, mip, formatInfo);
+        if (isXBPS) bytes = PlatformDeswizzlers.DeswizzleXBPS(bytes, mip, formatInfo);
         else if (isNX) bytes = PlatformDeswizzlers.GetDeswizzledData(bytes, mip, formatInfo);
 
         DecodeBytes(bytes, sizeX, sizeY, sizeZ, formatInfo, isNormalMap, out data, out colorType);
