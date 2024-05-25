@@ -1,11 +1,16 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using CUE4Parse.FileProvider.Objects;
 using CUE4Parse.UE4.IO.Objects;
+using CUE4Parse.UE4.VirtualFileSystem;
 using CUE4Parse.Utils;
+using DragonLib.Text;
 
 namespace CUE4Parse.FileProvider.Vfs
 {
@@ -64,14 +69,21 @@ namespace CUE4Parse.FileProvider.Vfs
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryGetValue(string key, out GameFile value)
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out GameFile value)
         {
             if (IsCaseInsensitive)
                 key = key.ToLowerInvariant();
+            var found = new List<GameFile>();
             foreach (var files in _indicesBag)
             {
-                if (files.TryGetValue(key, out value))
-                    return true;
+                if (files.TryGetValue(key, out var val)) {
+                    found.Add(val);
+                }
+            }
+
+            if (found.Count > 0) {
+                value = found.OrderBy(x => x is not VfsEntry vfs ? string.Empty : Path.GetFileName(vfs.Vfs.Path), new NaturalStringComparer(StringComparison.Ordinal)).Reverse().First();
+                return true;
             }
 
             value = default;
