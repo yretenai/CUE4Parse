@@ -165,7 +165,7 @@ namespace CUE4Parse.Compression
             using var pool = MemoryPool<byte>.Shared.Rent(blockDecoderMemorySizeNeeded);
             using var poolPin = pool.Memory.Pin();
 
-            var decodedSize = DecompressDelegate((byte*) inPin.Pointer, input.Length, (byte*) outPin.Pointer, output.Length, 1, 0, OodleLZ_Verbosity.Minimal, null, 0, null, null, (byte*) poolPin.Pointer, blockDecoderMemorySizeNeeded, OodleLZ_Decode_ThreadPhase.Unthreaded);
+            var decodedSize = DecompressDelegate((byte*) inPin.Pointer, inputSlice.Length, (byte*) outPin.Pointer, outputSlice.Length, 1, 0, OodleLZ_Verbosity.Minimal, null, 0, null, null, (byte*) poolPin.Pointer, blockDecoderMemorySizeNeeded, OodleLZ_Decode_ThreadPhase.Unthreaded);
 
             if (decodedSize <= 0)
             {
