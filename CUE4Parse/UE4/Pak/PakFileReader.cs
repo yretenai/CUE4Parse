@@ -108,6 +108,13 @@ namespace CUE4Parse.UE4.Pak
 
             ValidateMountPoint(ref mountPoint);
             MountPoint = mountPoint;
+
+            if (Ar.Game == EGame.GAME_GameForPeace)
+            {
+                GameForPeaceReadIndex(caseInsensitive, index);
+                return;
+            }
+
             var fileCount = index.Read<int>();
             var files = new Dictionary<string, GameFile>(fileCount);
 
@@ -297,6 +304,9 @@ namespace CUE4Parse.UE4.Pak
 #if DEBUG
                 Log.Debug("{EntryName} is compressed with {CompressionMethod}", pakEntry.Name, pakEntry.CompressionMethod);
 #endif
+                if (Game is EGame.GAME_MarvelRivals or EGame.GAME_OperationApocalypse) return NetEaseExtract(reader, pakEntry);
+                if (Game is EGame.GAME_GameForPeace) return GameForPeaceExtract(reader, pakEntry);
+
                 var uncompressed = new byte[(int)size + pakEntry.CompressionBlockSize];
                 var uncompressedOff = 0;
                 var shift = 0;
