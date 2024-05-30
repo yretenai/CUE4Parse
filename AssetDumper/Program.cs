@@ -671,7 +671,7 @@ public static class Program {
                 continue;
             }
 
-            version = (EGame)(((major - 3) << 24) + minor << 4);
+            version = (EGame) (((major - 3) << 24) + minor << 4);
 
             return true;
         }
@@ -687,6 +687,7 @@ public static class Program {
             if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory)) {
                 continue;
             }
+
             var ext = Path.GetExtension(path).ToLower();
             if (!string.IsNullOrEmpty(ext)) {
                 continue;
@@ -696,7 +697,7 @@ public static class Program {
                 case ".exe": {
                     var executableData = File.ReadAllBytes(path).AsSpan();
                     foreach (var hit in Signature.FindSignaturesReverse(executableData, utf8signature)) {
-                        var str = executableData[(hit + 1)..].ReadUTF8StringNonNull(64);
+                        var str = executableData[(hit + 1)..].ReadString(Encoding.UTF8, 64) ?? string.Empty;
 
                         if (TryParseUnrealVersion(str, out version)) {
                             return true;
@@ -704,7 +705,7 @@ public static class Program {
                     }
 
                     foreach (var hit in Signature.FindSignaturesReverse(executableData, utf16signature)) {
-                        var str = executableData[(hit + 1)..].ReadUTF16StringNonNull(64);
+                        var str = executableData[(hit + 1)..].ReadString(Encoding.Unicode, 64) ?? string.Empty;
 
                         if (TryParseUnrealVersion(str, out version)) {
                             return true;
