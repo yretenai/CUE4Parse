@@ -89,7 +89,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Nanite
             BulkSize = Ar.Read<uint>();
             PageSize = Ar.Read<uint>();
             DependenciesStart = Ar.Read<uint>();
-            if (Ar.Game >= EGame.GAME_UE5_3)
+            if (Ar.Game is >= EGame.GAME_UE5_3 or EGame.GAME_TheFirstDescendant)
             {
                 DependenciesNum = Ar.Read<ushort>();
                 MaxHierarchyDepth = Ar.Read<byte>();
