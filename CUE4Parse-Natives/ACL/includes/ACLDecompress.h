@@ -60,15 +60,21 @@ struct FCUE4ParseCurveWriter final : public acl::track_writer
 {
 	float* Floats;
     uint32_t NumSamples;
+    uint32_t FloatSize;
     uint32_t SampleIndex;
 
-    FCUE4ParseCurveWriter(float* inFloats, uint32_t inNumSamples)
+    FCUE4ParseCurveWriter(float* inFloats, uint32_t inFloatSize, uint32_t inNumSamples)
         : Floats(inFloats)
+        , FloatSize(inFloatSize)
         , NumSamples(inNumSamples)
     {}
 
 	RTM_FORCE_INLINE void RTM_SIMD_CALL write_float1(uint32_t trackIndex, rtm::scalarf_arg0 floatValue)
     {
-        Floats[trackIndex * NumSamples + SampleIndex] = rtm::scalar_cast(floatValue);
+        auto index = trackIndex * NumSamples + SampleIndex;
+        if(index > FloatSize) {
+            return;
+        }
+        Floats[index] = rtm::scalar_cast(floatValue);
     }
 };
