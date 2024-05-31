@@ -334,15 +334,33 @@ public static class Program {
                     case "uplugin":
                     case "uproject":
                     case "upluginmanifest": {
-                        if (flags.NoConfig) {
+                        var isSoundbankInfo = Path.GetFileName(normalizedGamePath).Equals("SoundbanksInfo.json", StringComparison.OrdinalIgnoreCase) ||
+                                              Path.GetFileName(normalizedGamePath).Equals("SoundbanksInfo.xml", StringComparison.OrdinalIgnoreCase);
+
+                        if (flags.NoConfig && !isSoundbankInfo) {
                             break;
                         }
 
                         var data = await Provider.TrySaveAssetAsync(path);
                         if (data != null) {
-                            targetGameFile.EnsureDirectoryExists();
-                            await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
-                            await stream.WriteAsync(data, CancellationToken.None);
+                            if (!flags.NoConfig) {
+                                targetGameFile.EnsureDirectoryExists();
+                                await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                                await stream.WriteAsync(data, CancellationToken.None);
+                            }
+
+                            if (isSoundbankInfo) {
+                                using var reader = new StringReader(Encoding.UTF8.GetString(data));
+                                var info = new WwiseSoundbanksInfo(reader, normalizedGamePath);
+                                foreach (var stream in info.SoundBanksInfo.StreamedFiles) {
+                                    wwiseRename[stream.Id + ".wem"] = stream.Language + "/" + stream.ShortName;
+                                    wwiseRename[stream.Id + ".wem"] = stream.Language + "/" + stream.ShortName;
+                                }
+
+                                foreach (var stream in info.SoundBanksInfo.SoundBanks.SelectMany(bank => bank.IncludedMemoryFiles)) {
+                                    wwiseRename[stream.Id + ".wem"] = stream.Language + "/" + stream.ShortName;
+                                }
+                            }
                         }
 
                         break;
@@ -504,7 +522,7 @@ public static class Program {
                                 try {
                                     switch (export) {
                                         case UTexture2D texture2D when !flags.NoTextures: {
-                                            var texture = texture2D.Decode();
+                                            using var texture = texture2D.Decode();
                                             if (texture != null) {
                                                 targetPath.EnsureDirectoryExists();
                                                 await using var fs = new FileStream(targetPath + $".{exportIndex}.png", FileMode.Create, FileAccess.Write);
@@ -655,12 +673,12 @@ public static class Program {
                     continue;
                 }
 
-                var gamePath = wemList.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x).EndsWith(Path.GetFileNameWithoutExtension(hashedPath), StringComparison.OrdinalIgnoreCase));
+                var gamePath = wemList.FirstOrDefault(x => Path.ChangeExtension(x, null).EndsWith(Path.ChangeExtension(hashedPath, null), StringComparison.OrdinalIgnoreCase));
                 if (gamePath is null) {
                     continue;
                 }
 
-                var path = Path.Combine(target, "Wwise", realPath);
+                var path = Path.Combine(target, "Wwise", realPath.Replace('\\', '/'));
                 path.EnsureDirectoryExists();
                 path = Path.ChangeExtension(path, Path.GetExtension(gamePath));
                 File.Copy(Path.Combine(target, "Content", gamePath), path, true);
