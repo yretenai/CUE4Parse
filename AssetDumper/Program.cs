@@ -233,8 +233,8 @@ public static class Program {
 
         History? history = null;
         History? oldHistory = null;
+        var targetHistoryPath = Path.Combine(target, Path.GetFileName(target) + ".history");
         if (!flags.StubHistory) {
-            var targetHistoryPath = Path.Combine(target, Path.GetFileName(target) + ".history");
             oldHistory = new History(flags.HistoryPath ?? targetHistoryPath);
             history = new History(oldHistory.Options);
         }
@@ -243,13 +243,9 @@ public static class Program {
         var wwiseRename = new Dictionary<string, string>();
         var wemList = new List<string>();
 
-        var filesEnumerable = Provider.Files.Where(x => x.Value is VfsEntry).DistinctBy(x => x.Key);
+        var filesEnumerable = Provider.Files.Where(x => x.Value is VfsEntry).Where(x => x.Value.Extension is not ("ubulk" or "uexp" or "uptnl")).DistinctBy(x => x.Key);
         if (flags.Filters.Count > 0) {
             filesEnumerable = filesEnumerable.Where(x => flags.Filters.Any(y => y.IsMatch(x.Key)));
-        }
-
-        if (!flags.SaveRaw) {
-            filesEnumerable = filesEnumerable.Where(x => x.Value.Extension is not ("ubulk" or "uexp" or "uptnl"));
         }
 
         filesEnumerable = filesEnumerable.OrderBy(x => Path.GetFileName(((VfsEntry) x.Value).Vfs.Path).Replace('.', '_'), new NaturalStringComparer(StringComparison.Ordinal))
@@ -289,20 +285,22 @@ public static class Program {
 
             var normalizedGamePath = gameFile.Path.TrimStart('/', '\\');
 
+            if (historyType == HistoryType.Same) {
+                continue;
+            }
+
             if (flags.SaveRaw) {
-                var data = await gameFile.TryReadAsync();
-                if (data != null) {
-                    var rawPath = Path.Combine(target, "Raw", normalizedGamePath);
-                    rawPath.EnsureDirectoryExists();
-                    await File.WriteAllBytesAsync(rawPath, data);
+                foreach (var subType in new[] { "uasset", "uexp", "uptnl", "ubulk" }) {
+                    if (Provider.Files.TryGetValue(gameFile.PathWithoutExtension + "." + subType, out var subFile)) {
+                        var rawPath = Path.Combine(target, "Raw", Path.ChangeExtension(normalizedGamePath, subType));
+                        rawPath.EnsureDirectoryExists();
+                        var data = await subFile.ReadAsync();
+                        await File.WriteAllBytesAsync(rawPath, data);
+                    }
                 }
             }
 
             if (flags.Dry) {
-                continue;
-            }
-
-            if (historyType == HistoryType.Same) {
                 continue;
             }
 
@@ -649,13 +647,16 @@ public static class Program {
                         break;
                     }
                 }
+
+                if (!flags.StubHistory && history != null && (processed % 1024) == 0) {
+                    history.Save(targetHistoryPath);
+                }
             } catch (Exception e) {
                 Log.Error(e, "Unknown error");
             }
         }
 
         if (!flags.StubHistory && history != null) {
-            var targetHistoryPath = Path.Combine(target, Path.GetFileName(target) + ".history");
             history.Save(targetHistoryPath);
         }
 
