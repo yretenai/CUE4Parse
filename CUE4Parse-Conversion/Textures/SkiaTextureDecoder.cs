@@ -15,9 +15,6 @@ using CUE4Parse_Conversion.Textures.DXT;
 using CUE4Parse.Compression;
 using CUE4Parse.UE4.Exceptions;
 using CUE4Parse.Utils;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using SkiaSharp;
 using static CUE4Parse.Utils.TypeConversionUtils;
 
