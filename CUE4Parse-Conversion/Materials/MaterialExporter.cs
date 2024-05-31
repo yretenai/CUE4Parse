@@ -14,13 +14,13 @@ namespace CUE4Parse_Conversion.Materials
         private readonly string _internalFilePath;
         private readonly string _fileData;
         private readonly MaterialExporter? _parentData;
-        private readonly IDictionary<string, SKBitmap?> _textures;
+        private readonly IDictionary<string, UTexture2D?> _textures;
 
         public MaterialExporter()
         {
             _internalFilePath = string.Empty;
             _fileData = string.Empty;
-            _textures = new Dictionary<string, SKBitmap?>();
+            _textures = new Dictionary<string, UTexture2D?>();
             _parentData = null;
         }
 
@@ -69,7 +69,8 @@ namespace CUE4Parse_Conversion.Materials
             foreach (var texture in toExport)
             {
                 if (texture == unrealMaterial || texture is not UTexture2D t) continue;
-                _textures[t.Owner?.Name ?? t.Name] = t.Decode(Options.Platform);
+
+                _textures[t.Owner?.Name ?? t.Name] = t;
             }
 
             if (unrealMaterial is UMaterialInstanceConstant {Parent: { }} material)
@@ -86,13 +87,16 @@ namespace CUE4Parse_Conversion.Materials
             File.WriteAllText(savedFilePath, _fileData);
             label = Path.GetFileName(savedFilePath);
 
-            foreach ((string? name, SKBitmap? bitmap) in _textures)
+            foreach ((string? name, UTexture2D? bitmap) in _textures)
             {
                 if (bitmap == null) continue;
 
+                using var texture = bitmap.Decode();
+                if (texture == null) continue;
+
                 var texturePath = FixAndCreatePath(baseDirectory, name, "png");
                 using var fs = new FileStream(texturePath, FileMode.Create, FileAccess.Write);
-                using var data = bitmap.Encode(SKEncodedImageFormat.Png, 100);
+                using var data = texture.Encode(SKEncodedImageFormat.Png, 100);
                 using var stream = data.AsStream();
                 stream.CopyTo(fs);
             }

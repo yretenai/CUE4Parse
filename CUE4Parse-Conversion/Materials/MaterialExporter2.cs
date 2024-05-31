@@ -59,7 +59,11 @@ namespace CUE4Parse_Conversion.Materials
 
             Parallel.ForEach(_materialData.Parameters.Textures.Values, texture =>
             {
-                if (texture is not UTexture2D t || t.Decode(Options.Platform) is not { } bitmap) return;
+                if (texture is not UTexture2D t) return;
+
+                using var bitmap = t.Decode(Options.Platform);
+
+                if (bitmap == null) return;
 
                 lock (_texture)
                 {
