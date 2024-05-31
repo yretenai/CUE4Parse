@@ -3,6 +3,8 @@ using System.Buffers;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using AssetRipper.TextureDecoder.Bc;
+using AssetRipper.TextureDecoder.Etc;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse_Conversion.Textures.ASTC;
@@ -16,7 +18,7 @@ using static CUE4Parse.Utils.TypeConversionUtils;
 
 namespace CUE4Parse_Conversion.Textures;
 
-public static class TextureDecoder
+public static class SkiaTextureDecoder
 {
     private static readonly ArrayPool<byte> _shared = ArrayPool<byte>.Shared;
 
@@ -203,37 +205,25 @@ public static class TextureDecoder
                 colorType = SKColorType.Rgb888x;
                 break;
             case EPixelFormat.PF_BC6H:
-                // BC6H doesn't work no matter the pixel format, the closest we can get is either
-                // Rgb565 DETEX_PIXEL_FORMAT_FLOAT_RGBX16 or Rgb565 DETEX_PIXEL_FORMAT_FLOAT_BGRX16
-
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, true,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_BPTC_FLOAT,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_FLOAT_RGBX16);
-                colorType = SKColorType.Rgb565;
+                data = new byte[sizeX * sizeY * 4];
+                Bc6h.Decompress(bytes, sizeX, sizeY, true, data);
+                colorType = SKColorType.Bgra8888;
                 break;
             case EPixelFormat.PF_BC7:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_BPTC,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+                Bc7.Decompress(bytes, sizeX, sizeY, out data);
+                colorType = SKColorType.Bgra8888;
                 break;
             case EPixelFormat.PF_ETC1:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_ETC1,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+                EtcDecoder.DecompressETC(bytes, sizeX, sizeY, out data);
+                colorType = SKColorType.Bgra8888;
                 break;
             case EPixelFormat.PF_ETC2_RGB:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_ETC2,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+                EtcDecoder.DecompressETC2(bytes, sizeX, sizeY, out data);
+                colorType = SKColorType.Bgra8888;
                 break;
             case EPixelFormat.PF_ETC2_RGBA:
-                data = Detex.DecodeDetexLinear(bytes, sizeX, sizeY, false,
-                    DetexTextureFormat.DETEX_TEXTURE_FORMAT_ETC2_EAC,
-                    DetexPixelFormat.DETEX_PIXEL_FORMAT_RGBA8);
-                colorType = SKColorType.Rgba8888;
+                EtcDecoder.DecompressETC2A8(bytes, sizeX, sizeY, out data);
+                colorType = SKColorType.Bgra8888;
                 break;
             case EPixelFormat.PF_R16F:
             case EPixelFormat.PF_R16F_FILTER:

@@ -25,6 +25,7 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
     <PackageReference Include="SkiaSharp" Version="2.88.8" />
     <PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="AssetRipper.TextureDecoder" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
