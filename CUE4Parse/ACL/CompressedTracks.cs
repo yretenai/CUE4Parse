@@ -13,6 +13,7 @@ namespace CUE4Parse.ACL
         {
             _bufferLength = buffer.Length;
             Handle = nAllocate(_bufferLength);
+            GC.AddMemoryPressure(_bufferLength);
             Marshal.Copy(buffer, 0, Handle, buffer.Length);
             var error = IsValid(false);
             if (error != null)
@@ -51,6 +52,7 @@ namespace CUE4Parse.ACL
         private void ReleaseUnmanagedResources() {
             if (Handle != IntPtr.Zero) {
                 nDeallocate(Handle, _bufferLength);
+                GC.RemoveMemoryPressure(_bufferLength);
             }
         }
 
