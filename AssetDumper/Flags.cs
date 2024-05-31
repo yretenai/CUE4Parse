@@ -43,6 +43,9 @@ public record Flags : CommandLineFlags {
     [Flag("no-sounds", Help = "Suppress Sound conversion", Category = "Export")]
     public bool NoSounds { get; set; }
 
+    [Flag("convert-wwise", Help = "Convert Wwise to usable formats", Category = "Export")]
+    public bool ConvertWwiseSounds { get; set; }
+
     [Flag("no-meshes", Help = "Suppress Mesh conversion", Category = "Export")]
     public bool NoMeshes { get; set; }
 

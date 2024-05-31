@@ -36,6 +36,7 @@ using DragonLib.IO;
 using DragonLib.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Pepper;
 using Serilog;
 using Serilog.Events;
 using SkiaSharp;
@@ -309,7 +310,8 @@ public static class Program {
             var targetJsonPath = Path.Combine(target, "Json", normalizedGamePath + ".json");
 
             try {
-                switch (gameFile.Extension.ToLowerInvariant()) {
+                var ext = gameFile.Extension.ToLowerInvariant();
+                switch (ext) {
                     default: {
                         if (flags.NoUnknown) {
                             break;
@@ -325,6 +327,9 @@ public static class Program {
                         break;
                     }
 
+                    case "json":
+                    case "txt":
+                    case "xml":
                     case "ini":
                     case "uplugin":
                     case "uproject":
@@ -352,8 +357,23 @@ public static class Program {
                         var data = await Provider.TrySaveAssetAsync(path);
                         if (data != null) {
                             targetGameFile.EnsureDirectoryExists();
-                            await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
-                            await stream.WriteAsync(data, CancellationToken.None);
+                            if (ext == "wem" && flags.ConvertWwiseSounds) {
+                                unsafe {
+                                    fixed (byte* dataPin = &data[0]) {
+                                        using var memoryStream = new UnmanagedMemoryStream(dataPin, data.Length);
+                                        using var codec = WemHelper.GetDecoder(memoryStream);
+                                        var newExt = codec.Format.ToString("G").ToLower();
+                                        targetGameFile = Path.ChangeExtension(targetGameFile, newExt);
+                                        normalizedGamePath = Path.ChangeExtension(normalizedGamePath, newExt);
+                                        using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                                        codec.Decode(stream);
+                                    }
+                                }
+                            } else {
+                                await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                                await stream.WriteAsync(data, CancellationToken.None);
+                            }
+
                             wemList.Add(normalizedGamePath);
                         }
 
@@ -635,7 +655,7 @@ public static class Program {
                     continue;
                 }
 
-                var gamePath = wemList.FirstOrDefault(x => x.EndsWith(hashedPath, StringComparison.OrdinalIgnoreCase));
+                var gamePath = wemList.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x).EndsWith(Path.GetFileNameWithoutExtension(hashedPath), StringComparison.OrdinalIgnoreCase));
                 if (gamePath is null) {
                     continue;
                 }
@@ -733,6 +753,7 @@ public static class Program {
                     } catch {
                         // ignored
                     }
+
                     break;
                 }
             }

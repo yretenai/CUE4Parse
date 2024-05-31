@@ -4,3 +4,6 @@
 [submodule "DragonLib"]
 	path = DragonLib
 	url = https://github.com/yretenai/DragonLib.git
+[submodule "Pepper"]
+	path = Pepper
+	url = https://github.com/yretenai/Pepper.git
