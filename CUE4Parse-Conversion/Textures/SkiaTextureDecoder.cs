@@ -117,10 +117,10 @@ public static class SkiaTextureDecoder {
                             var tileStrideStride = tilePixelIndex * 4;
                             var pixelStride = pixelIndex * 4;
 
-                            pixels[pixelStride] = data[tileStrideStride];
-                            pixels[pixelStride + 1] = data[tileStrideStride + 1];
-                            pixels[pixelStride + 2] = data[tileStrideStride + 2];
-                            pixels[pixelStride + 3] = data[tileStrideStride + 3];
+                            pixels[pixelStride] += data[tileStrideStride];
+                            pixels[pixelStride + 1] += data[tileStrideStride + 1];
+                            pixels[pixelStride + 2] += data[tileStrideStride + 2];
+                            pixels[pixelStride + 3] += data[tileStrideStride + 3];
                         }
                     }
                 }
