@@ -69,6 +69,11 @@ namespace CUE4Parse.UE4.Assets.Exports.Animation
                 Guid = Ar.Read<FGuid>();
             }
 
+            if (Ar.Game == EGame.GAME_TheFirstDescendant) {
+                Ar.Position = validPos;
+                return;
+            }
+
             if (Ar.Ver >= EUnrealEngineObjectUE4Version.SKELETON_ADD_SMARTNAMES)
             {
                 var mapLength = Ar.Read<int>();
