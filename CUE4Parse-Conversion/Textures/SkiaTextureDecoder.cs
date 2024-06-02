@@ -33,7 +33,7 @@ public static class SkiaTextureDecoder {
             var tileSize = (int) vt.TileSize;
             var tileBorderSize = (int) vt.TileBorderSize;
             var tilePixelSize = (int) vt.GetPhysicalTileSize();
-            var tileCrop = new SKRect(tileBorderSize, tileBorderSize, tilePixelSize - tileBorderSize, tilePixelSize - tileBorderSize);
+            var tileCrop = new SKRectI(tileBorderSize, tileBorderSize, tilePixelSize - tileBorderSize, tilePixelSize - tileBorderSize);
             var level = texture.PlatformData.FirstMipToSerialize;
 
             FVirtualTextureTileOffsetData tileOffsetData;
@@ -103,12 +103,12 @@ public static class SkiaTextureDecoder {
                         }
                     }
 
-                    if (tilePixelSize != tileSize) {
-                        using var image = InstallPixels(data, new SKImageInfo(tilePixelSize, tilePixelSize, SKColorType.Rgba8888, SKAlphaType.Unpremul));
-                        using var resized = image.Resize(new SKImageInfo(tileSize, tileSize, SKColorType.Rgba8888, SKAlphaType.Unpremul), SKFilterQuality.High);
-                        data = new byte[tileSize * tileSize * 4];
-                        resized.GetPixelSpan().CopyTo(data);
-                    }
+                    using var image = InstallPixels(data, new SKImageInfo(tilePixelSize, tilePixelSize, SKColorType.Rgba8888, SKAlphaType.Unpremul));
+                    using var subset = new SKBitmap(new SKImageInfo(tileCrop.Width, tileCrop.Height, SKColorType.Rgba8888, SKAlphaType.Unpremul));
+                    image.ExtractSubset(subset, tileCrop);
+                    using var resized = subset.Resize(new SKImageInfo(tileSize, tileSize, SKColorType.Rgba8888, SKAlphaType.Unpremul), SKFilterQuality.High);
+                    data = new byte[tileSize * tileSize * 4];
+                    resized.GetPixelSpan().CopyTo(data);
 
                     var (xOffset, yOffset) = (tileX * tileSize, tileY * tileSize);
                     for (var x = 0; x < tileSize; ++x) {
