@@ -24,7 +24,7 @@
     <PackageReference Include="LZMA-SDK" Version="22.1.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="OffiUtils" Version="1.1.0" />
-    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog" Version="4.0.0" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
@@ -52,40 +52,6 @@
     <CMakeProject>../CUE4Parse-Natives/</CMakeProject>
     <CMakeBuildDir>$(CMakeProject)builddir</CMakeBuildDir>
   </PropertyGroup>
-
-  <Target Name="Build-Natives" BeforeTargets="BeforeBuild" AfterTargets="AfterBuild">
-    <MakeDir Directories="$(CMakeBuildDir)" Condition="!Exists('$(CMakeBuildDir)')" />
-    <Exec Command="cmake .." ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)" IgnoreExitCode="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-      <Output TaskParameter="ExitCode" PropertyName="CMakeExitCode" />
-    </Exec>
-    <Exec Condition=" '$(CMakeExitCode)' == '0' " Command="cmake --build . --config $(Configuration)" ConsoleToMSBuild="true" WorkingDirectory="$(CMakeBuildDir)">
-      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-      <Output TaskParameter="ExitCode" PropertyName="CMakeExitCode" />
-    </Exec>
-    <Message Condition=" '$(CMakeExitCode)' != '0' " Importance="high" Text="CUE4Parse-Natives build failed. Continuing without it. ERROR: '$(OutputOfExec)'" />
-    <ItemGroup Condition=" '$(CMakeExitCode)' == '0' ">
-      <Content Include="..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.dll" Condition=" '$(OS)' == 'Windows_NT' ">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <PackagePath>lib/$(TargetFramework)</PackagePath>
-        <PackageCopyToOutput>true</PackageCopyToOutput>
-      </Content>
-      <Content Include="..\CUE4Parse-Natives\bin\$(Configuration)\CUE4Parse-Natives.pdb" Condition=" '$(Configuration)' == 'Debug' And  '$(OS)' == 'Windows_NT' ">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Pack>false</Pack>
-      </Content>
-      <Content Include="$(CMakeBuildDir)/CUE4Parse-Natives.so" Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' ">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <PackagePath>lib/$(TargetFramework)</PackagePath>
-        <PackageCopyToOutput>true</PackageCopyToOutput>
-      </Content>
-      <Content Include="$(CMakeBuildDir)/CUE4Parse-Natives.dylib" Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' ">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <PackagePath>lib/$(TargetFramework)</PackagePath>
-        <PackageCopyToOutput>true</PackageCopyToOutput>
-      </Content>
-    </ItemGroup>
-  </Target>
 
   <!-- remove everything?? -->
   <Target Name="CleanCMakeProj" BeforeTargets="BeforeClean">
