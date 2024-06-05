@@ -15,6 +15,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Component.StaticMesh
             base.Deserialize(Ar, validPos);
 
             if (Ar.Versions["StaticMeshComponent.Broken"]) {
+                Ar.Position = validPos;
                 return;
             }
 
