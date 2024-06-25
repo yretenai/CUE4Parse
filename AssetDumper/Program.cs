@@ -127,8 +127,11 @@ public static class Program {
             mapOverrides = JsonConvert.DeserializeObject<Dictionary<string, KeyValuePair<string, string>>>(await File.ReadAllTextAsync(flags.MapStruct));
         }
 
-        var versions = new VersionContainer(flags.Game, flags.Platform, optionOverrides: versionOverrides, mapStructTypesOverrides: mapOverrides);
-        using var Provider = new DefaultFileProvider(Path.GetFullPath(flags.PakPath), SearchOption.AllDirectories, false, versions);
+        VersionContainer.DEFAULT_VERSION_CONTAINER.Game = flags.Game;
+        VersionContainer.DEFAULT_VERSION_CONTAINER.Platform = flags.Platform;
+        VersionContainer.DEFAULT_VERSION_CONTAINER.OptionOverrides = versionOverrides;
+        VersionContainer.DEFAULT_VERSION_CONTAINER.MapStructTypesOverrides = mapOverrides;
+        using var Provider = new DefaultFileProvider(Path.GetFullPath(flags.PakPath), SearchOption.AllDirectories, false, VersionContainer.DEFAULT_VERSION_CONTAINER);
         Provider.UseLazySerialization = false;
 
         flags.Mappings ??= Directory.GetFiles(flags.PakPath, "*.usmap", SearchOption.AllDirectories).SingleOrDefault();
@@ -138,16 +141,16 @@ public static class Program {
         }
 
         Provider.Initialize();
-        if (flags.Keys.Any()) {
+        if (flags.Keys.Count > 0) {
             var keys = flags.Keys.Select(x => new FAesKey(x)).ToList();
             var guids = flags.KeyGuids.Select(x => new FGuid(x)).ToList();
 
-            if (guids.Any()) {
+            if (guids.Count > 0) {
                 await Provider.SubmitKeysAsync(guids.Zip(keys).Select(x => new KeyValuePair<FGuid, FAesKey>(x.First, x.Second)));
             }
 
             var remain = keys.Skip(guids.Count).ToArray();
-            if (remain.Any()) {
+            if (remain.Length > 0) {
                 var foundKeys = new Dictionary<FGuid, FAesKey>();
                 foreach (var reader in Provider.UnloadedVfs) {
                     if (foundKeys.ContainsKey(reader.EncryptionKeyGuid) || !reader.IsEncrypted) {

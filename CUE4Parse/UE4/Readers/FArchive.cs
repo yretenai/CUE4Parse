@@ -77,7 +77,7 @@ namespace CUE4Parse.UE4.Readers
 
         protected FArchive(VersionContainer? versions = null)
         {
-            Versions = versions ?? new VersionContainer();
+            Versions = versions ?? VersionContainer.DEFAULT_VERSION_CONTAINER;
         }
 
         public override void Flush() { }

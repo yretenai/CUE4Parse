@@ -15,8 +15,10 @@ namespace CUE4Parse.UE4.Versions
         public EGame Game
         {
             get => _game;
-            set
-            {
+            set {
+                if (_game == value) {
+                    return;
+                }
                 _game = value;
                 InitOptions();
                 InitMapStructTypes();
@@ -40,6 +42,9 @@ namespace CUE4Parse.UE4.Versions
             get => _platform;
             set
             {
+                if (_platform == value) {
+                    return;
+                }
                 _platform = value;
                 InitOptions();
                 InitMapStructTypes();
@@ -52,18 +57,36 @@ namespace CUE4Parse.UE4.Versions
         public readonly Dictionary<string, bool> Options = new();
         public readonly Dictionary<string, KeyValuePair<string, string>> MapStructTypes = new();
 
-        private readonly IDictionary<string, bool>? _optionOverrides;
-        private readonly IDictionary<string, KeyValuePair<string, string>>? _mapStructTypesOverrides;
+        private IDictionary<string, bool>? _optionOverrides;
+        private IDictionary<string, KeyValuePair<string, string>>? _mapStructTypesOverrides;
+
+        public IDictionary<string, bool> OptionOverrides {
+            get => _optionOverrides;
+            set {
+                _optionOverrides = value;
+                InitOptions();
+            }
+        }
+
+        public IDictionary<string, KeyValuePair<string, string>>? MapStructTypesOverrides {
+            get => _mapStructTypesOverrides;
+            set {
+                _mapStructTypesOverrides = value;
+                InitMapStructTypes();
+            }
+        }
 
         public VersionContainer(EGame game = GAME_UE4_LATEST, ETexturePlatform platform = ETexturePlatform.DesktopMobile, FPackageFileVersion ver = default, FCustomVersionContainer? customVersions = null, IDictionary<string, bool>? optionOverrides = null, IDictionary<string, KeyValuePair<string, string>>? mapStructTypesOverrides = null)
         {
             _optionOverrides = optionOverrides;
             _mapStructTypesOverrides = mapStructTypesOverrides;
-
-            Game = game;
-            Ver = ver;
-            Platform = platform;
+            _game = game;
+            _ver = ver;
+            _platform = platform;
             CustomVersions = customVersions;
+
+            InitOptions();
+            InitMapStructTypes();
         }
 
         private void InitOptions()
@@ -133,6 +156,6 @@ namespace CUE4Parse.UE4.Versions
             set => Options[optionKey] = value;
         }
 
-        public object Clone() => new VersionContainer(Game, Platform, Ver, CustomVersions, _optionOverrides, _mapStructTypesOverrides) { bExplicitVer = bExplicitVer };
+        public object Clone() => new VersionContainer(Game, Platform, Ver, CustomVersions, OptionOverrides, MapStructTypesOverrides) { bExplicitVer = bExplicitVer };
     }
 }
