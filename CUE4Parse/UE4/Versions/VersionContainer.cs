@@ -20,6 +20,9 @@ namespace CUE4Parse.UE4.Versions
                     return;
                 }
                 _game = value;
+                if (!bExplicitVer) {
+                    _ver = _game.GetVersion();
+                }
                 InitOptions();
                 InitMapStructTypes();
             }
@@ -80,8 +83,8 @@ namespace CUE4Parse.UE4.Versions
         {
             _optionOverrides = optionOverrides;
             _mapStructTypesOverrides = mapStructTypesOverrides;
-            _game = game;
             _ver = ver;
+            _game = game;
             _platform = platform;
             CustomVersions = customVersions;
 
