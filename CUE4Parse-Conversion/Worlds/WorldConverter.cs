@@ -40,8 +40,8 @@ public static class WorldConverter {
 
             var name = actorObject.Name.SubstringAfterLast('/');
 
+            var root = actorObject.TemplatedGetOrDefault<UObject?>("RootComponent");
             if (actorObject.ExportType is "Landscape" or "LandscapeStreamingProxy" or "LandscapeProxy") {
-                var root = actorObject.TemplatedGetOrDefault<UObject?>("RootComponent");
                 var actorId = CreateActor(root, name, actorIds, actors, lights, overrideMaterials);
                 CreateLandscape(actorId, actorObject, landscapes, platform);
                 continue;
@@ -55,6 +55,10 @@ public static class WorldConverter {
             var skelComponent = actorObject.TemplatedGetOrDefault<USkeletalMeshComponent?>("SkeletalMeshComponent");
             if (skelComponent != null) {
                 CreateActor(skelComponent, name, actorIds, actors, lights, overrideMaterials);
+            }
+
+            if (staticComponent is null && skelComponent is null && root is not null) {
+                CreateActor(root, name, actorIds, actors, lights, overrideMaterials);
             }
 
             var handled = new HashSet<string>();
