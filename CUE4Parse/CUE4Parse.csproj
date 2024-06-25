@@ -35,8 +35,6 @@
 
   <ItemGroup>
     <Folder Include="Resources" />
-    <PackageReference Include="Zlib-ng.NET" Version="1.0.1" />
-    <PackageReference Include="ZstdSharp.Port" Version="0.8.1" />
   </ItemGroup>
 
   <ItemGroup>
