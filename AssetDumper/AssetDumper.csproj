@@ -16,11 +16,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
-      <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.8" />
-      <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="2.88.8" />
-      <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="2.88.8" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+      <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+      <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.0.0-preview.3.1" />
+      <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.0.0-preview.3.1" />
+      <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.0.0-preview.3.1" />
     </ItemGroup>
 
 </Project>

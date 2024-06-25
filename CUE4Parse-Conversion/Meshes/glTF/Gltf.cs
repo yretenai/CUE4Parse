@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.Json.Nodes;
 using CUE4Parse_Conversion.Materials;
 using CUE4Parse_Conversion.Meshes.PSK;
 using CUE4Parse.UE4.Assets.Exports.Animation;
@@ -76,7 +77,7 @@ namespace CUE4Parse_Conversion.Meshes.glTF
                 }
 
                 targetNames += "]}";
-                mesh.Extras = (JsonContent) targetNames;
+                mesh.Extras = targetNames;
             }
 
             var sceneBuilder = new SceneBuilder();

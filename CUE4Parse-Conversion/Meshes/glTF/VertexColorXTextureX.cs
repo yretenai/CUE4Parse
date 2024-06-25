@@ -2,27 +2,35 @@
 using System.Collections.Generic;
 using System.Numerics;
 using SharpGLTF.Geometry.VertexTypes;
+using SharpGLTF.Memory;
 using SharpGLTF.Schema2;
 
 namespace CUE4Parse_Conversion.Meshes.glTF
 {
     public struct VertexColorXTextureX: IVertexMaterial, IEquatable<VertexColorXTextureX>
     {
+        public void Add(in VertexMaterialDelta delta) {
+            Color += delta.Color0Delta;
+            TexCoord0 += delta.TexCoord0Delta;
+            TexCoord1 += delta.TexCoord1Delta;
+            TexCoord2 += delta.TexCoord2Delta;
+            TexCoord4 += delta.TexCoord3Delta;
+        }
+
         public int MaxColors => 1; // Do we need more?
         public int MaxTextCoords => Constants.MAX_MESH_UV_SETS;
 
-        [VertexAttribute("COLOR_0", EncodingType.UNSIGNED_BYTE, true)]
         public Vector4 Color;
 
         // public List<Vector2> TexCoords;
-        [VertexAttribute("TEXCOORD_0")] public Vector2 TexCoord0;
-        [VertexAttribute("TEXCOORD_1")] public Vector2 TexCoord1;
-        [VertexAttribute("TEXCOORD_2")] public Vector2 TexCoord2;
-        [VertexAttribute("TEXCOORD_3")] public Vector2 TexCoord3;
-        [VertexAttribute("TEXCOORD_4")] public Vector2 TexCoord4;
-        [VertexAttribute("TEXCOORD_5")] public Vector2 TexCoord5;
-        [VertexAttribute("TEXCOORD_6")] public Vector2 TexCoord6;
-        [VertexAttribute("TEXCOORD_7")] public Vector2 TexCoord7;
+        public Vector2 TexCoord0;
+        public Vector2 TexCoord1;
+        public Vector2 TexCoord2;
+        public Vector2 TexCoord3;
+        public Vector2 TexCoord4;
+        public Vector2 TexCoord5;
+        public Vector2 TexCoord6;
+        public Vector2 TexCoord7;
 
         public VertexColorXTextureX(Vector4 color, List<Vector2> texCoords)
         {
@@ -58,6 +66,21 @@ namespace CUE4Parse_Conversion.Meshes.glTF
                 case 6: TexCoord6 = coord; break;
                 case 7: TexCoord7 = coord; break;
             }
+        }
+
+        public VertexMaterialDelta Subtract(IVertexMaterial baseValue) {
+            var delta = new VertexMaterialDelta();
+            if (baseValue.MaxColors > 0) {
+                delta.Color0Delta -= baseValue.GetColor(0);
+            }
+
+            for (var index = 0; index < Math.Min(baseValue.MaxTextCoords, 8); ++index) {
+                var baseCoord = baseValue.GetTexCoord(index);
+                var thisCoord = GetTexCoord(index);
+                ((IVertexMaterial) delta).SetTexCoord(index, thisCoord - baseCoord);
+            }
+
+            return delta;
         }
 
         public Vector2 GetTexCoord(int index)
@@ -105,5 +128,19 @@ namespace CUE4Parse_Conversion.Meshes.glTF
                 other.TexCoord6 == TexCoord6 &&
                 other.TexCoord7 == TexCoord7;
         }
+
+        public KeyValuePair<string, AttributeFormat>[] EncodingAttributes = [
+            new KeyValuePair<string, AttributeFormat>("COLOR_0", new AttributeFormat(DimensionType.VEC4, EncodingType.BYTE, true)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_0", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_1", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_2", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_3", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_4", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_5", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_6", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+            new KeyValuePair<string, AttributeFormat>("TEXCOORD_7", new AttributeFormat(DimensionType.VEC2, EncodingType.FLOAT)),
+        ];
+
+        public IEnumerable<KeyValuePair<string, AttributeFormat>> GetEncodingAttributes() => EncodingAttributes;
     }
 }
