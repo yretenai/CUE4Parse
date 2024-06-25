@@ -73,7 +73,7 @@ namespace CUE4Parse_Conversion.Materials
                 _textures[t.Owner?.Name ?? t.Name] = t;
             }
 
-            if (unrealMaterial is UMaterialInstanceConstant {Parent: { }} material)
+            if (unrealMaterial is UMaterialInstanceConstant {Parent: not null } material)
                 _parentData = new MaterialExporter(material.Parent) { Options = Options };
         }
 
@@ -94,9 +94,17 @@ namespace CUE4Parse_Conversion.Materials
                 using var texture = bitmap.Decode();
                 if (texture == null) continue;
 
-                var texturePath = FixAndCreatePath(baseDirectory, name, "png");
+                var ext = Options.TextureFormat switch
+                {
+                    ETextureFormat.Png => "png",
+                    ETextureFormat.Tga => "tga",
+                    ETextureFormat.Dds => "dds",
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
+                var texturePath = FixAndCreatePath(baseDirectory, name, ext);
                 using var fs = new FileStream(texturePath, FileMode.Create, FileAccess.Write);
-                using var data = texture.Encode(SKEncodedImageFormat.Png, 100);
+                using var data = texture.Encode(Options.TextureFormat, 100);
                 using var stream = data.AsStream();
                 stream.CopyTo(fs);
             }
