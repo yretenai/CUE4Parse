@@ -62,6 +62,10 @@ public static class Program {
             return;
         }
 
+        if (flags.NoRevorb) {
+            WemHelper.CanUseRevorb = false;
+        }
+
         Globals.WarnMissingImportPackage = true;
         Globals.AllowLargeFiles = true;
 
@@ -245,6 +249,7 @@ public static class Program {
         var wwiseNames = new HashSet<string>();
         var wwiseRename = new Dictionary<string, string>();
         var wemList = new List<string>();
+        var bnkList = new List<string>();
 
         var filesEnumerable = Provider.Files.Where(x => x.Value is VfsEntry).Where(x => x.Value.Extension is not ("ubulk" or "uexp" or "uptnl")).DistinctBy(x => x.Key);
         if (flags.Filters.Count > 0) {
@@ -321,7 +326,7 @@ public static class Program {
                         var data = await Provider.TrySaveAssetAsync(path);
                         if (data != null) {
                             targetGameFile.EnsureDirectoryExists();
-                            await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                            await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.ReadWrite);
                             await stream.WriteAsync(data, CancellationToken.None);
                         }
 
@@ -338,6 +343,10 @@ public static class Program {
                         var isSoundbankInfo = Path.GetFileName(normalizedGamePath).Equals("SoundbanksInfo.json", StringComparison.OrdinalIgnoreCase) ||
                                               Path.GetFileName(normalizedGamePath).Equals("SoundbanksInfo.xml", StringComparison.OrdinalIgnoreCase);
 
+                        if (normalizedGamePath.Contains("WWiseBankExport", StringComparison.OrdinalIgnoreCase)) {
+                            isSoundbankInfo = isSoundbankInfo || normalizedGamePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || normalizedGamePath.EndsWith(".xml", StringComparison.OrdinalIgnoreCase);
+                        }
+
                         if (flags.NoConfig && !isSoundbankInfo) {
                             break;
                         }
@@ -346,7 +355,7 @@ public static class Program {
                         if (data != null) {
                             if (!flags.NoConfig) {
                                 targetGameFile.EnsureDirectoryExists();
-                                await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                                await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.ReadWrite);
                                 await stream.WriteAsync(data, CancellationToken.None);
                             }
 
@@ -359,6 +368,10 @@ public static class Program {
                                 }
 
                                 foreach (var stream in info.SoundBanksInfo.SoundBanks.SelectMany(bank => bank.IncludedMemoryFiles)) {
+                                    wwiseRename[stream.Id + ".wem"] = stream.Language + "/" + stream.ShortName;
+                                }
+
+                                foreach (var stream in info.SoundBanksInfo.SoundBanks.SelectMany(bank => bank.IncludedEvents).SelectMany(x => x.IncludedMemoryFiles)) {
                                     wwiseRename[stream.Id + ".wem"] = stream.Language + "/" + stream.ShortName;
                                 }
                             }
@@ -384,16 +397,20 @@ public static class Program {
                                         var newExt = codec.Format.ToString("G").ToLower();
                                         targetGameFile = Path.ChangeExtension(targetGameFile, newExt);
                                         normalizedGamePath = Path.ChangeExtension(normalizedGamePath, newExt);
-                                        using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                                        using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.ReadWrite);
                                         codec.Decode(stream);
                                     }
                                 }
                             } else {
-                                await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.Write);
+                                await using var stream = new FileStream(targetGameFile, FileMode.Create, FileAccess.ReadWrite);
                                 await stream.WriteAsync(data, CancellationToken.None);
                             }
 
-                            wemList.Add(normalizedGamePath);
+                            if (ext == "wem") {
+                                wemList.Add(normalizedGamePath);
+                            } else {
+                                bnkList.Add(normalizedGamePath);
+                            }
                         }
 
                         break;
@@ -526,7 +543,7 @@ public static class Program {
                                             using var texture = texture2D.Decode();
                                             if (texture != null) {
                                                 targetPath.EnsureDirectoryExists();
-                                                await using var fs = new FileStream(targetPath + $".{exportIndex}.png", FileMode.Create, FileAccess.Write);
+                                                await using var fs = new FileStream(targetPath + $".{exportIndex}.png", FileMode.Create, FileAccess.ReadWrite);
                                                 using var data = texture.Encode(SKEncodedImageFormat.Png, 100);
                                                 await using var stream = data.AsStream();
                                                 await stream.CopyToAsync(fs);
@@ -538,7 +555,7 @@ public static class Program {
                                             var texture = animated2d.FileBlob;
                                             if (texture.Length > 0 && animated2d.FileType != AnimatedTextureType.None) {
                                                 targetPath.EnsureDirectoryExists();
-                                                await using var fs = new FileStream(targetPath + $".{exportIndex}.{animated2d.FileType.ToString("G").ToLower()}", FileMode.Create, FileAccess.Write);
+                                                await using var fs = new FileStream(targetPath + $".{exportIndex}.{animated2d.FileType.ToString("G").ToLower()}", FileMode.Create, FileAccess.ReadWrite);
                                                 await fs.WriteAsync(texture);
                                             }
 
@@ -548,7 +565,7 @@ public static class Program {
                                             export.Decode(true, out var format, out var data);
                                             if (data != null && !string.IsNullOrEmpty(format)) {
                                                 targetPath.EnsureDirectoryExists();
-                                                await using var stream = new FileStream(targetPath + $".{exportIndex}.{format}", FileMode.Create, FileAccess.Write);
+                                                await using var stream = new FileStream(targetPath + $".{exportIndex}.{format}", FileMode.Create, FileAccess.ReadWrite);
                                                 await stream.WriteAsync(data, CancellationToken.None);
                                             }
 
@@ -663,30 +680,82 @@ public static class Program {
             history.Save(targetHistoryPath);
         }
 
+        if (flags.ExtractWwiseMemory) {
+            var wwisePath = Path.Combine(target, "Wwise");
+            foreach (var bnkPath in bnkList) {
+                try {
+                    var fallbackPath = Path.ChangeExtension(bnkPath.Replace('\\', '/'), null);
+                    var gamePath = Path.Combine(target, "Content", bnkPath);
+                    await using var bnkStream = File.OpenRead(gamePath);
+                    using var bnk = new WwiseSoundbank(bnkStream);
+
+                    foreach (var audioId in bnk.DataIndex.Keys) {
+                        var mediaName = $"{audioId:D}.wem";
+
+                        if (flags.RenameWwiseAudio && wwiseRename.TryGetValue(mediaName, out var realPath)) {
+                            mediaName = Path.Combine(wwisePath, realPath.Replace('\\', '/'));
+                            Log.Information("Extracting Wwise {AudioId:D} -> {RealPath}", audioId, realPath);
+                        } else {
+                            mediaName = Path.Combine(wwisePath, fallbackPath, mediaName);
+                            Log.Information("Extracting Wwise {AudioId:D}", audioId);
+                        }
+
+                        mediaName.EnsureDirectoryExists();
+
+                        using var rented = bnk.RentSound(audioId, out var size);
+
+                        if (flags.ConvertWwiseSounds) {
+                            unsafe {
+                                using var pinned = rented.Memory.Pin();
+                                using var memoryStream = new UnmanagedMemoryStream((byte*) pinned.Pointer, Math.Min(size, rented.Memory.Length));
+                                using var codec = WemHelper.GetDecoder(memoryStream);
+                                var newExt = codec.Format.ToString("G").ToLower();
+                                using var stream = new FileStream(Path.ChangeExtension(mediaName, newExt), FileMode.Create, FileAccess.ReadWrite);
+                                codec.Decode(stream);
+                            }
+                        } else {
+                            await using var output = new FileStream(Path.ChangeExtension(mediaName, "wem"), FileMode.Create, FileAccess.ReadWrite);
+                            output.Write(rented.Memory.Span[..size]);
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.Error(e, "Failed extracting audio from bnk");
+                }
+            }
+        }
+
+        if (flags.RenameWwiseAudio) {
+            foreach (var (hashedPath, realPath) in wwiseRename) {
+                try {
+                    if (string.IsNullOrEmpty(realPath)) {
+                        continue;
+                    }
+
+                    var gamePath = wemList.FirstOrDefault(x => Path.ChangeExtension(x, null).EndsWith(Path.ChangeExtension(hashedPath, null), StringComparison.OrdinalIgnoreCase));
+                    if (gamePath is null) {
+                        continue;
+                    }
+
+                    Log.Information("Renaming Wwise {HashedPath} -> {RealPath}", hashedPath, realPath);
+
+                    var path = Path.Combine(target, "Wwise", realPath.Replace('\\', '/'));
+                    path.EnsureDirectoryExists();
+                    path = Path.ChangeExtension(path, Path.GetExtension(gamePath));
+                    File.Copy(Path.Combine(target, "Content", gamePath), path, true);
+                } catch (Exception e) {
+                    Log.Error(e, "Failed renaming audio");
+                }
+            }
+        }
+
         if (flags.TrackWwiseEvents) {
             if (File.Exists(Path.Combine(target, "wwnames.txt"))) {
                 wwiseNames.UnionWith(await File.ReadAllLinesAsync(Path.Combine(target, "wwnames.txt")));
             }
 
+            wwiseNames.UnionWith(wwiseRename.Values);
+
             await File.WriteAllTextAsync(Path.Combine(target, "wwnames.txt"), string.Join('\n', wwiseNames));
-        }
-
-        if (flags.RenameWwiseAudio) {
-            foreach (var (hashedPath, realPath) in wwiseRename) {
-                if (string.IsNullOrEmpty(realPath)) {
-                    continue;
-                }
-
-                var gamePath = wemList.FirstOrDefault(x => Path.ChangeExtension(x, null).EndsWith(Path.ChangeExtension(hashedPath, null), StringComparison.OrdinalIgnoreCase));
-                if (gamePath is null) {
-                    continue;
-                }
-
-                var path = Path.Combine(target, "Wwise", realPath.Replace('\\', '/'));
-                path.EnsureDirectoryExists();
-                path = Path.ChangeExtension(path, Path.GetExtension(gamePath));
-                File.Copy(Path.Combine(target, "Content", gamePath), path, true);
-            }
         }
     }
 

@@ -19,6 +19,12 @@ public record Flags : CommandLineFlags {
     [Flag("wwise", Help = "Rename Wwise WEMs if a DebugName is present", Category = "Export")]
     public bool RenameWwiseAudio { get; set; }
 
+    [Flag("wwise-bnk", Help = "Extract Wwise WEMs from BNKs", Category = "Export")]
+    public bool ExtractWwiseMemory { get; set; }
+
+    [Flag("wwise-no-revorb", Help = "Do not Revorb Wwise WEMs", Category = "Export")]
+    public bool NoRevorb { get; set; }
+
     [Flag("locres", Help = "Saave localization data", Category = "Export")]
     public bool SaveLocRes { get; set; }
 
