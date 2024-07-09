@@ -24,7 +24,7 @@ namespace CUE4Parse.UE4.Assets.Objects
         // Add more extension for the first group here
         //
     }
-    
+
     public class FPropertyTag
     {
         public FName Name;
@@ -35,6 +35,11 @@ namespace CUE4Parse.UE4.Assets.Objects
         public bool HasPropertyGuid;
         public FGuid? PropertyGuid;
         public FPropertyTagType? Tag;
+
+        public FPropertyTag(string name, FPropertyTagType type) {
+            Name = name;
+            Tag = type;
+        }
 
         public FPropertyTag(FAssetArchive Ar, PropertyInfo info, ReadType type)
         {

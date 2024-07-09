@@ -651,6 +651,28 @@ public static class Program {
                                             }));
                                             break;
                                         }
+                                        default: {
+                                            if (!flags.NoBlueprints) {
+                                                // note: despite the name we're actually exporting SCS objects, not blueprints specifically.
+                                                var creationMethod = export.GetOrDefault<EComponentCreationMethod?>("CreationMethod");
+                                                // if not marked as a SCS actor and is not a blueprint class:
+                                                if (creationMethod is not EComponentCreationMethod.SimpleConstructionScript && export is not UBlueprintGeneratedClass) {
+                                                    break;
+                                                }
+
+                                                var targetBpPath = Path.Combine(target, "Blueprint", normalizedGamePath + $".{exportIndex}.json");
+                                                targetBpPath.EnsureDirectoryExists();
+                                                var merged = BlueprintConstructor.GetMergedStruct(export);
+                                                await File.WriteAllTextAsync(targetBpPath, JsonConvert.SerializeObject(merged, Formatting.Indented, new JsonSerializerSettings {
+                                                    StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                                    Converters = {
+                                                        new StringEnumConverter(),
+                                                    },
+                                                }));
+                                            }
+
+                                            break;
+                                        }
                                     }
                                 } catch (Exception e) {
                                     if (Debugger.IsAttached) {

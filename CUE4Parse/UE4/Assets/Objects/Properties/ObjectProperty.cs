@@ -7,6 +7,10 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
     [JsonConverter(typeof(ObjectPropertyConverter))]
     public class ObjectProperty : FPropertyTagType<FPackageIndex>
     {
+        public ObjectProperty(FPackageIndex value) {
+            Value = value;
+        }
+
         public ObjectProperty(FAssetArchive Ar, ReadType type)
         {
             Value = type switch

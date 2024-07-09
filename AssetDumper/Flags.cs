@@ -141,4 +141,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("mapstruct", Help = "path to the Map Struct override json", Category = "AssetDumper")]
     public string? MapStruct { get; set; }
+
+    [Flag("no-blueprints", Aliases = ["no-bp"], Help = "Do not output merged blueprints", Category = "AssetDumper")]
+    public bool NoBlueprints { get; set; }
 }
