@@ -256,6 +256,10 @@ public static class Program {
             filesEnumerable = filesEnumerable.Where(x => flags.Filters.Any(y => y.IsMatch(x.Key)));
         }
 
+        if (flags.Ignore.Count > 0) {
+            filesEnumerable = filesEnumerable.Where(x => !flags.Ignore.All(y => y.IsMatch(x.Key)));
+        }
+
         filesEnumerable = filesEnumerable.OrderBy(x => Path.GetFileName(((VfsEntry) x.Value).Vfs.Path).Replace('.', '_'), new NaturalStringComparer(StringComparison.Ordinal))
                                          .ThenBy(x => x.Key, new NaturalStringComparer(StringComparison.Ordinal));
 
@@ -488,18 +492,16 @@ public static class Program {
 
                             if (!flags.NoJSON) {
                                 // FMovieScene causes a lot of out-of-memory issues while serializing.
-                                if (exports.All(x => x.Class?.Name.StartsWith("MovieScene") != true)) {
-                                    targetJsonPath.EnsureDirectoryExists();
-                                    try {
-                                        await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(exports, Formatting.Indented, new JsonSerializerSettings {
-                                            StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
-                                            Converters = {
-                                                new StringEnumConverter()
-                                            }
-                                        }));
-                                    } catch (Exception e) {
-                                        Log.Error(e, "Failed to convert UObject exports to JSON");
-                                    }
+                                targetJsonPath.EnsureDirectoryExists();
+                                try {
+                                    await File.WriteAllTextAsync(targetJsonPath, JsonConvert.SerializeObject(exports.Select(x => x.Class?.Name.StartsWith("MovieScene") == false ? x : default), Formatting.Indented, new JsonSerializerSettings {
+                                        StringEscapeHandling = StringEscapeHandling.EscapeNonAscii,
+                                        Converters = {
+                                            new StringEnumConverter()
+                                        }
+                                    }));
+                                } catch (Exception e) {
+                                    Log.Error(e, "Failed to convert UObject exports to JSON");
                                 }
                             }
 

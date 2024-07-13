@@ -118,6 +118,9 @@ public record Flags : CommandLineFlags {
     [Flag("filter", Help = "Path filters", Category = "AssetDumper")]
     public List<Regex> Filters { get; set; } = [];
 
+    [Flag("ignore", Help = "Path filters to ignore", Category = "AssetDumper")]
+    public List<Regex> Ignore { get; set; } = [];
+
     [Flag("skip-class", Aliases = ["e"], Help = "Classes to skip", Category = "AssetDumper")]
     public HashSet<string> SkipClasses { get; set; } = [];
 
