@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using CUE4Parse.UE4.Assets.Exports.Animation;
-using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Writers;
 using CUE4Parse.Utils;
-using CUE4Parse_Conversion.ActorX;
 using CUE4Parse_Conversion.Animations.PSA;
 using CUE4Parse_Conversion.Animations.UEFormat;
 using CUE4Parse.UE4.Assets.Exports;

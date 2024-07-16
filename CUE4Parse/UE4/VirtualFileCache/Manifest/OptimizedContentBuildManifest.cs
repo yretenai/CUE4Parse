@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using CUE4Parse.Compression;
 using CUE4Parse.UE4.Readers;
 
 namespace CUE4Parse.UE4.VirtualFileCache.Manifest

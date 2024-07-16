@@ -5,7 +5,6 @@ using CUE4Parse_Conversion.Meshes.UEFormat.Collision;
 using CUE4Parse_Conversion.UEFormat;
 using CUE4Parse_Conversion.UEFormat.Structs;
 using CUE4Parse.UE4.Assets.Exports.Animation;
-using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Objects.Core.Math;

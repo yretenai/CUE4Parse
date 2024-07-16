@@ -9,7 +9,6 @@ using CUE4Parse_Conversion.Materials;
 using CUE4Parse_Conversion.Meshes.glTF;
 using CUE4Parse_Conversion.Meshes.PSK;
 using CUE4Parse_Conversion.Meshes.UEFormat;
-using CUE4Parse.UE4.Objects.PhysicsEngine;
 using CUE4Parse.UE4.Objects.UObject;
 using CUE4Parse.Utils;
 using Serilog;

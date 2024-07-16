@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using CUE4Parse.Utils;
 
 namespace CUE4Parse.UE4.IO.Objects
 {

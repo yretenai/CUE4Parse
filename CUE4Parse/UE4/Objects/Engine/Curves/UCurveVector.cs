@@ -1,8 +1,5 @@
-using System;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Assets.Readers;
-using CUE4Parse.UE4.Objects.Core.Math;
-using CUE4Parse.Utils;
 using Newtonsoft.Json;
 
 namespace CUE4Parse.UE4.Objects.Engine.Curves

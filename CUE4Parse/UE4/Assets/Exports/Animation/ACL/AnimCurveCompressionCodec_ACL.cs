@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 using CUE4Parse.ACL;
-using CUE4Parse.UE4.Assets.Readers;
 using CUE4Parse.UE4.Objects.Engine.Curves;
 
 namespace CUE4Parse.UE4.Assets.Exports.Animation.ACL;

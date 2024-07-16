@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using CUE4Parse.UE4.Readers;
 using CUE4Parse.UE4.Wwise.Enums;
 using Newtonsoft.Json;

@@ -1,4 +1,3 @@
-using CUE4Parse.Compression;
 using CUE4Parse.UE4.Readers;
 
 namespace CUE4Parse.UE4.Oodle.Objects
