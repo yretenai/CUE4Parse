@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using CUE4Parse_Conversion.Textures;
 using CUE4Parse_Conversion.Worlds.PSW;
+using CUE4Parse.UE4.Assets;
 using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Component.SkeletalMesh;
 using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
+using CUE4Parse.UE4.Assets.Exports.SkeletalMesh;
+using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Assets.Objects.Properties;
 using CUE4Parse.UE4.Objects.Core.Math;
@@ -15,15 +18,13 @@ using CUE4Parse.Utils;
 namespace CUE4Parse_Conversion.Worlds;
 
 public static class WorldConverter {
-    public static (List<WorldActor> Actors, List<WorldLight> Lights, List<(int ActorId, int MaterialIndex, string MaterialName)>
-        OverrideMaterials, List<WorldLandscape> Landscapes) ConvertWorld(UWorld world, ETexturePlatform platform) {
+    public static (List<WorldActor> Actors, List<WorldLight> Lights, List<WorldLandscape> Landscapes) ConvertWorld(UWorld world, ETexturePlatform platform) {
         var actors = new List<WorldActor>();
         var lights = new List<WorldLight>();
-        var overrideMaterials = new List<(int, int, string)>();
         var landscapes = new List<WorldLandscape>();
 
         if (!world.PersistentLevel.TryLoad<ULevel>(out var level)) {
-            return (actors, lights, overrideMaterials, landscapes);
+            return (actors, lights, landscapes);
         }
 
         var actorIds = new List<string>();
@@ -42,23 +43,23 @@ public static class WorldConverter {
 
             var root = actorObject.TemplatedGetOrDefault<UObject?>("RootComponent");
             if (actorObject.ExportType is "Landscape" or "LandscapeStreamingProxy" or "LandscapeProxy") {
-                var actorId = CreateActor(root, name, actorIds, actors, lights, overrideMaterials);
+                var actorId = CreateActor(root, name, actorIds, actors, lights);
                 CreateLandscape(actorId, actorObject, landscapes, platform);
                 continue;
             }
 
             var staticComponent = actorObject.TemplatedGetOrDefault<UStaticMeshComponent?>("StaticMeshComponent");
             if (staticComponent != null) {
-                CreateActor(staticComponent, name, actorIds, actors, lights, overrideMaterials);
+                CreateActor(staticComponent, name, actorIds, actors, lights);
             }
 
             var skelComponent = actorObject.TemplatedGetOrDefault<USkeletalMeshComponent?>("SkeletalMeshComponent");
             if (skelComponent != null) {
-                CreateActor(skelComponent, name, actorIds, actors, lights, overrideMaterials);
+                CreateActor(skelComponent, name, actorIds, actors, lights);
             }
 
             if (staticComponent is null && skelComponent is null && root is not null) {
-                CreateActor(root, name, actorIds, actors, lights, overrideMaterials);
+                CreateActor(root, name, actorIds, actors, lights);
             }
 
             var handled = new HashSet<string>();
@@ -77,7 +78,7 @@ public static class WorldConverter {
                     }
 
                     if (componentName.EndsWith("Component")) {
-                        CreateActor(componentObject!.Load(), name + "_" + property.Name.Text, actorIds, actors, lights, overrideMaterials, true);
+                        CreateActor(componentObject!.Load(), name + "_" + property.Name.Text, actorIds, actors, lights, true);
                     }
                 }
 
@@ -85,7 +86,7 @@ public static class WorldConverter {
             }
         }
 
-        return (actors, lights, overrideMaterials, landscapes);
+        return (actors, lights, landscapes);
     }
 
     private static void CreateLandscape(int actorId, UObject actorObject, List<WorldLandscape> landscapes, ETexturePlatform platform) {
@@ -188,8 +189,7 @@ public static class WorldConverter {
         }
     }
 
-    private static int CreateActor(UObject? component, string? name, List<string> actorIds, List<WorldActor> actors,
-                                   List<WorldLight> lights, List<(int, int, string)> overrideMaterials, bool strict = false) {
+    private static int CreateActor(UObject? component, string? name, List<string> actorIds, List<WorldActor> actors, List<WorldLight> lights, bool strict = false) {
         if (component == null) {
             return -1;
         }
@@ -206,7 +206,7 @@ public static class WorldConverter {
         var mesh = "None";
         var isSkeleton = component is USkeletalMeshComponent;
         if (meshIndex == null || meshIndex.IsNull) {
-            meshIndex = component.TemplatedGetOrDefault<FPackageIndex?>("SkeletalMesh");
+            meshIndex = component.TemplatedGetOrDefault<FPackageIndex?>("SkeletalMesh") ?? component.TemplatedGetOrDefault<FPackageIndex?>("SkinnedAsset");
             isSkeleton = meshIndex != null;
         }
 
@@ -215,6 +215,7 @@ public static class WorldConverter {
             return -1;
         }
 
+        var materials = new List<(string Name, string Path)>();
         if (meshIndex is { IsNull: false }) {
             var outerMost = meshIndex.ResolvedObject;
             if (outerMost != null) {
@@ -224,19 +225,54 @@ public static class WorldConverter {
 
                 mesh = outerMost.Name.Text + $".{meshIndex.ResolvedObject!.ExportIndex}";
             }
+
+            if (meshIndex.TryLoad(out var meshObj)) {
+                var meshMaterials = default(ResolvedObject?[]);
+                if (meshObj is UStaticMesh staticMesh) {
+                    meshMaterials = staticMesh.Materials;
+                } else if (meshObj is USkeletalMesh skeletalMesh) {
+                    meshMaterials = skeletalMesh.Materials;
+                }
+
+                foreach (var material in meshMaterials ?? []) {
+                    var outerMostMaterial = material;
+                    if (outerMostMaterial != null) {
+                        while (outerMostMaterial.Outer != null) {
+                            outerMostMaterial = outerMostMaterial.Outer;
+                        }
+
+                        materials.Add((material!.Name.Text, outerMostMaterial.Name.Text + $".{material!.ExportIndex}"));
+                    }
+                }
+
+                var actorMaterials = component.TemplatedGetOrDefault("OverrideMaterials", Array.Empty<FPackageIndex?>());
+                for (var materialIndex = 0; materialIndex < actorMaterials.Length; materialIndex++) {
+                    var actorMaterialIndex = actorMaterials[materialIndex];
+
+                    var outerMostMaterial = actorMaterialIndex?.ResolvedObject;
+                    if (outerMostMaterial != null) {
+                        while (outerMostMaterial.Outer != null) {
+                            outerMostMaterial = outerMostMaterial.Outer;
+                        }
+
+                        materials[materialIndex] = (actorMaterialIndex!.Name, outerMostMaterial.Name.Text + $".{actorMaterialIndex!.ResolvedObject!.ExportIndex}");
+                    }
+                }
+            }
         }
 
         var actor = new WorldActor {
             Name = name,
             Parent = -1,
             AssetPath = mesh,
+            Materials = materials,
         };
 
         if (parent is { IsNull: false }) {
             actor.Parent = actorIds.IndexOf(parent.ResolvedObject?.GetFullName()!);
 
             if (actor.Parent == -1) {
-                actor.Parent = CreateActor(parent.ResolvedObject?.Load(), parent.ResolvedObject?.Name.Text, actorIds, actors, lights, overrideMaterials);
+                actor.Parent = CreateActor(parent.ResolvedObject?.Load(), parent.ResolvedObject?.Name.Text, actorIds, actors, lights);
             }
 
             if (actor.Parent == -1) {
@@ -303,18 +339,6 @@ public static class WorldConverter {
             }
 
             lights.Add(light);
-        }
-
-        var actorMaterials = component.TemplatedGetOrDefault("OverrideMaterials", Array.Empty<FPackageIndex?>());
-        for (var materialIndex = 0; materialIndex < actorMaterials.Length; materialIndex++) {
-            var actorMaterialIndex = actorMaterials[materialIndex];
-            var actorMaterial = actorMaterialIndex?.ResolvedObject?.Load();
-            if (actorMaterial == null) {
-                continue;
-            }
-
-            overrideMaterials.Add((actorId, materialIndex,
-                                      (actorMaterial.Owner?.Name ?? actor.Name).SubstringAfterLast('/')));
         }
 
         actors.Add(actor);

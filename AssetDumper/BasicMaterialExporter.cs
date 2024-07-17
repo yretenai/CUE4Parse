@@ -9,7 +9,7 @@ namespace AssetDumper;
 
 public record BasicTexture(string Path) {
     public float SamplingScale { get; set; } = 1.0f;
-    public int UVChannelIndex { get; set; } = 0;
+    public int UVChannelIndex { get; set; }
 }
 
 public class BasicMaterialData {
@@ -19,7 +19,8 @@ public class BasicMaterialData {
     public Dictionary<string, bool> Switches { get; set; } = [];
     public Dictionary<string, FLinearColor> Masks { get; set; } = [];
     public FStructFallback? SubsurfaceProfile { get; set; }
-    public List<string> Names { get; set; } = [];
+    public List<string> Hierarchy { get; set; } = [];
+    public string Name { get; set; } = "None";
 
     public void MergeTexture(string name, string? path, bool purge = true) {
         if (string.IsNullOrEmpty(path)) {
@@ -75,6 +76,8 @@ public class BasicMaterialExporter : ExporterBase {
         InternalPath = unrealMaterial.Owner?.Name ?? unrealMaterial.Name;
 
         ProcessMaterial(unrealMaterial);
+
+        MaterialData.Name = unrealMaterial.Name;
     }
 
     private void ProcessMaterial(UMaterialInterface unrealMaterial) {
@@ -82,7 +85,7 @@ public class BasicMaterialExporter : ExporterBase {
             ProcessMaterial(parent);
         }
 
-        MaterialData.Names.Add(unrealMaterial.Name);
+        MaterialData.Hierarchy.Add(unrealMaterial.Name);
 
         var cachedExpressionData = unrealMaterial.CachedExpressionData;
         if (cachedExpressionData != null &&

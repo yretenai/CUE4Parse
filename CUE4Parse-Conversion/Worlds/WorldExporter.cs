@@ -19,24 +19,42 @@ public class WorldExporter : ExporterBase {
         WorldName = world.Owner?.Name ?? world.Name;
         WorldName += Suffix;
 
-        var (actors, lights, overrideMaterials, landscapes) = WorldConverter.ConvertWorld(world, platform);
+        var (actors, lights, landscapes) = WorldConverter.ConvertWorld(world, platform);
 
         using var Ar = new FArchiveWriter();
         Ar.SerializeChunkHeader(new VChunkHeader(), "WRLDHEAD");
 
-        var actorsHdr = new VChunkHeader {
-            DataCount = actors.Count,
-            DataSize = 560,
+        var materialHdr = new VChunkHeader {
+            DataCount = actors.Sum(x => x.Materials.Count),
+            DataSize = 512,
         };
 
-        Ar.SerializeChunkHeader(actorsHdr, "WORLDACTORS::2");
-
+        var materialIndices = new List<(int Start, int Count)>();
+        var currentMaterialIndex = 0;
+        Ar.SerializeChunkHeader(materialHdr, "ACTORMATERIALS");
         foreach (var actor in actors) {
+            materialIndices.Add((currentMaterialIndex, actor.Materials.Count));
+            currentMaterialIndex += actor.Materials.Count;
+            foreach (var (materialName, materialPath) in actor.Materials) {
+                Ar.Write(materialName, 256);
+                Ar.Write(materialPath, 256);
+            }
+        }
+
+        var actorsHdr = new VChunkHeader {
+            DataCount = actors.Count,
+            DataSize = 568,
+        };
+
+        Ar.SerializeChunkHeader(actorsHdr, "WORLDACTORS::3");
+
+        for (var index = 0; index < actors.Count; index++) {
+            var actor = actors[index];
             if (actor.Name is { Length: > 256 }) {
                 actor.Name = actor.Name[..256];
             }
 
-            actor.Serialize(Ar);
+            actor.Serialize(Ar, materialIndices[index]);
         }
 
         var lightsHdr = new VChunkHeader {
@@ -48,18 +66,6 @@ public class WorldExporter : ExporterBase {
 
         foreach (var light in lights) {
             light.Serialize(Ar);
-        }
-
-        var overrideHdr = new VChunkHeader {
-            DataCount = overrideMaterials.Count,
-            DataSize = 264,
-        };
-        Ar.SerializeChunkHeader(overrideHdr, "INSTMATERIAL::2");
-
-        foreach (var (actorId, materialId, overrideMaterial) in overrideMaterials) {
-            Ar.Write(actorId);
-            Ar.Write(materialId);
-            Ar.Write(overrideMaterial, 256);
         }
 
         var landscapeHdr = new VChunkHeader {

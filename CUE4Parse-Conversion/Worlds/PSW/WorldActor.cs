@@ -1,4 +1,6 @@
-﻿using CUE4Parse_Conversion.ActorX;
+﻿using System;
+using System.Collections.Generic;
+using CUE4Parse_Conversion.ActorX;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Writers;
 
@@ -12,8 +14,9 @@ public class WorldActor {
     public FVector Position;
     public FQuat Rotation;
     public FVector Scale;
+    public List<(string, string)> Materials { get; set; } = [];
 
-    public void Serialize(FArchiveWriter Ar) {
+    public void Serialize(FArchiveWriter Ar, (int Start, int Count) materialIndex) {
         Ar.Write(Name ?? "None", 256);
         Ar.Write(AssetPath ?? "None", 256);
         Ar.Write(Parent);
@@ -21,5 +24,7 @@ public class WorldActor {
         Rotation.Serialize(Ar);
         Scale.Serialize(Ar);
         Ar.Write((uint) Flags);
+        Ar.Write(materialIndex.Start);
+        Ar.Write(materialIndex.Count);
     }
 }
