@@ -591,21 +591,9 @@ public static class Program {
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }
-                                        case UMaterialInstanceConstant materialInterface when !flags.NoMaterial: {
+                                        case UMaterialInterface material when !flags.NoMaterial: {
                                             targetPath.EnsureDirectoryExists();
-                                            var exporter = new MaterialExporter2(materialInterface, exportOptions, $".{exportIndex}");
-                                            exporter.TryWriteToDir(targetBaseDir, out _, out _);
-                                            break;
-                                        }
-                                        case UMaterial material when !flags.NoMaterial && material.CachedExpressionData != null: {
-                                            targetPath.EnsureDirectoryExists();
-                                            var exporter = new MaterialExporter2(material, exportOptions, $".{exportIndex}");
-                                            exporter.TryWriteToDir(targetBaseDir, out _, out _);
-                                            break;
-                                        }
-                                        case UUnrealMaterial unrealMaterial when !flags.NoMaterial: {
-                                            targetPath.EnsureDirectoryExists();
-                                            var exporter = new MaterialExporter2(unrealMaterial, exportOptions, $".{exportIndex}");
+                                            var exporter = new BasicMaterialExporter(material, exportOptions, $".{exportIndex}");
                                             exporter.TryWriteToDir(targetBaseDir, out _, out _);
                                             break;
                                         }

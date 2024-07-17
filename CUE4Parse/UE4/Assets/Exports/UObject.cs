@@ -122,7 +122,7 @@ namespace CUE4Parse.UE4.Assets.Exports
          */
         public string GetFullName(UObject? stopOuter = null, bool includeClassPackage = false)
         {
-            var result = new StringBuilder(128);
+            var result = new StringBuilder();
             GetFullName(stopOuter, result, includeClassPackage);
             return result.ToString();
         }
@@ -226,8 +226,8 @@ namespace CUE4Parse.UE4.Assets.Exports
                 }
             }
             else
-                propMappings = Ar.Owner?.Mappings?.Types.ContainsKey($"{module ?? ""}/{type}") == true ? 
-                    new SerializedStruct(Ar.Owner?.Mappings, struc, $"{module ?? ""}/{type}") : 
+                propMappings = Ar.Owner?.Mappings?.Types.ContainsKey($"{module ?? ""}/{type}") == true ?
+                    new SerializedStruct(Ar.Owner?.Mappings, struc, $"{module ?? ""}/{type}") :
                     new SerializedStruct(Ar.Owner?.Mappings, struc);
 
             if (propMappings == null)

@@ -67,7 +67,7 @@ namespace CUE4Parse.UE4.Assets
                 if(Globals.SkipObjectClasses.Contains(obj.ExportType)) {
                     return;
                 }
-                
+
                 obj.Deserialize(Ar, validPos);
 #if DEBUG
                 var remaining = validPos - Ar.Position;
