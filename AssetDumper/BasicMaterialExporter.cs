@@ -3,6 +3,7 @@ using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Objects;
 using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.UE4.Objects.UObject;
+using CUE4Parse.UE4.Versions;
 using Newtonsoft.Json;
 
 namespace AssetDumper;
@@ -16,6 +17,7 @@ public class BasicMaterialData {
     public Dictionary<string, BasicTexture> Textures { get; } = [];
     public Dictionary<string, float> Scalars { get; } = [];
     public Dictionary<string, FLinearColor> Vectors { get; set; } = [];
+    public Dictionary<string, FVector4> DoubleVectors { get; set; } = [];
     public Dictionary<string, bool> Switches { get; set; } = [];
     public Dictionary<string, FLinearColor> Masks { get; set; } = [];
     public FStructFallback? SubsurfaceProfile { get; set; }
@@ -87,8 +89,10 @@ public class BasicMaterialExporter : ExporterBase {
 
         MaterialData.Hierarchy.Add(unrealMaterial.Name);
 
-        ProcessCachedExpressionData(unrealMaterial.CachedExpressionData);
-        ProcessCachedExpressionData(unrealMaterial.MaterialCachedExpressionData);
+        ProcessCachedExpressionData(unrealMaterial.MaterialCachedExpressionData, unrealMaterial.Owner?.Provider?.Versions.Game ?? EGame.GAME_UE4_0);
+        if (unrealMaterial.CachedExpressionData is not null && unrealMaterial.CachedExpressionData.TryGetValue(out FStructFallback materialParameters, "Parameters")) {
+            ProcessCachedExpressionData(materialParameters, unrealMaterial.Owner?.Provider?.Versions.Game ?? EGame.GAME_UE4_0);
+        }
 
         switch (unrealMaterial) {
             case UMaterialInstance materialInstance: {
@@ -141,32 +145,67 @@ public class BasicMaterialExporter : ExporterBase {
         }
     }
 
-    private void ProcessCachedExpressionData(FStructFallback? cachedExpressionData) {
-        if (cachedExpressionData != null &&
-            cachedExpressionData.TryGetValue(out FStructFallback materialParameters, "Parameters") &&
-            materialParameters.TryGetAllValues(out FStructFallback[] runtimeEntries, "RuntimeEntries")) {
-            if (materialParameters.TryGetValue(out float[] scalarValues, "ScalarValues") &&
-                runtimeEntries[0].TryGetValue(out FMaterialParameterInfo[] scalarParameterInfos, "ParameterInfos")) {
-                for (var index = 0; index < scalarParameterInfos.Length; index++) {
-                    var scalarParameter = scalarParameterInfos[index];
-                    MaterialData.Scalars[scalarParameter.Name.Text] = scalarValues[index];
+    private void ProcessCachedExpressionData(FStructFallback? materialParameters, EGame game) {
+        if (materialParameters == null) {
+            return;
+        }
+
+        if (!materialParameters.TryGetAllValues(out FStructFallback[] runtimeEntries, "RuntimeEntries")) {
+            return;
+        }
+
+        var currentIndex = 0; // Scalar
+        if (runtimeEntries[currentIndex++].TryGetValue(out FMaterialParameterInfo[] scalarParameterInfos, "ParameterInfos", "ParameterInfoSet") &&
+            materialParameters.TryGetValue(out float[] scalarValues, "ScalarValues")) {
+            for (var index = 0; index < scalarParameterInfos.Length; index++) {
+                var scalarParameter = scalarParameterInfos[index];
+                MaterialData.Scalars[scalarParameter.Name.Text] = scalarValues[index];
+            }
+        }
+
+        if (runtimeEntries[currentIndex++].TryGetValue(out FMaterialParameterInfo[] vectorParameterInfos, "ParameterInfos", "ParameterInfoSet") &&
+            materialParameters.TryGetValue(out FLinearColor[] vectorValues, "VectorValues")) {
+            for (var index = 0; index < vectorParameterInfos.Length; index++) {
+                var vectorParameter = vectorParameterInfos[index];
+                MaterialData.Vectors[vectorParameter.Name.Text] = vectorValues[index];
+            }
+        }
+
+        if (game > EGame.GAME_UE5_0) {
+            if (runtimeEntries[currentIndex++].TryGetValue(out FMaterialParameterInfo[] doubleVectorParameterInfos, "ParameterInfos", "ParameterInfoSet") &&
+                materialParameters.TryGetValue(out FVector4[] doubleVectorValues, "DoubleVectorValues")) {
+                for (var index = 0; index < doubleVectorParameterInfos.Length; index++) {
+                    var doubleVectorParameter = doubleVectorParameterInfos[index];
+                    MaterialData.DoubleVectors[doubleVectorParameter.Name.Text] = doubleVectorValues[index];
                 }
             }
+        }
 
-            if (materialParameters.TryGetValue(out FLinearColor[] vectorValues, "VectorValues") &&
-                runtimeEntries[1].TryGetValue(out FMaterialParameterInfo[] vectorParameterInfos, "ParameterInfos")) {
-                for (var index = 0; index < vectorParameterInfos.Length; index++) {
-                    var vectorParameter = vectorParameterInfos[index];
-                    MaterialData.Vectors[vectorParameter.Name.Text] = vectorValues[index];
+        if (runtimeEntries[currentIndex].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos", "ParameterInfoSet") &&
+            materialParameters.TryGetValue(out object[] textureValues, "TextureValues")) {
+            for (var index = 0; index < textureParameterInfos.Length; index++) {
+                var textureParameter = textureParameterInfos[index];
+                var texture = textureValues[index];
+                switch (texture) {
+                    case FPackageIndex packageIndex:
+                        MaterialData.MergeTexture(textureParameter.Name.Text, packageIndex.ResolvedObject?.GetPathName());
+                        break;
+                    case FSoftObjectPath softObjectPath when softObjectPath.TryLoad(out var textureObj):
+                        MaterialData.MergeTexture(textureParameter.Name.Text, textureObj.GetPathName());
+                        break;
                 }
             }
+        }
 
-            if (materialParameters.TryGetValue(out FPackageIndex[] textureValues, "TextureValues") &&
-                runtimeEntries[2].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos")) {
-                for (var index = 0; index < textureParameterInfos.Length; index++) {
-                    var textureParameter = textureParameterInfos[index];
-                    MaterialData.MergeTexture(textureParameter.Name.Text, textureValues[index].ResolvedObject?.GetPathName());
-                }
+        if (game < EGame.GAME_UE5_0) {
+            return;
+        }
+
+        currentIndex = (int) EMaterialParameterType.StaticSwitch;
+        if (runtimeEntries[currentIndex].TryGetValue(out FMaterialParameterInfo[] switchParameterInfos, "ParameterInfos", "ParameterInfoSet")
+            && materialParameters.TryGetValue(out bool[] staticSwitchValues, "StaticSwitchValues")) {
+            for (var index = 0; index < switchParameterInfos.Length; index++) {
+                MaterialData.Switches[switchParameterInfos[index].Name.Text] = staticSwitchValues[index];
             }
         }
     }

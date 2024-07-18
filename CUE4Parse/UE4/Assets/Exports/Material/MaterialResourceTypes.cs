@@ -649,17 +649,18 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
 
     public enum EMaterialParameterType : byte
     {
-        Scalar = 0,
+        Scalar,
         Vector,
-        DoubleVector,
+        DoubleVector, // UE5+
         Texture,
         Font,
         RuntimeVirtualTexture,
+        SparseVolumeTexture, // UE5+
+        StaticSwitch,
 
         NumRuntime, // Runtime parameter types must go above here, and editor-only ones below
 
-        StaticSwitch = NumRuntime,
-        StaticComponentMask,
+        StaticComponentMask = NumRuntime,
 
         Num,
         None = 0xff,

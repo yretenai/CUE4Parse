@@ -304,8 +304,12 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
             }
         }
 
-        public bool VerifyTexture(string name, UTexture texture, bool appendToDictionary = true, EMaterialSamplerType samplerType = EMaterialSamplerType.SAMPLERTYPE_Color)
+        public bool VerifyTexture(string name, UTexture? texture, bool appendToDictionary = true, EMaterialSamplerType samplerType = EMaterialSamplerType.SAMPLERTYPE_Color)
         {
+            if (texture == null) {
+                return false;
+            }
+
             var fallback = "";
             if (Regex.IsMatch(name, RegexDiffuse, RegexOptions.IgnoreCase))
                 fallback = FallbackDiffuse;

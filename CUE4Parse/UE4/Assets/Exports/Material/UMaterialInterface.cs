@@ -82,33 +82,40 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                 parameters.VerifyTexture(name, texture, false);
             }
 
-            GetParams(parameters, MaterialCachedExpressionData);
-            GetParams(parameters, CachedExpressionData);
+            ProcessMaterialParameters(parameters, MaterialCachedExpressionData);
+            if (CachedExpressionData is not null && CachedExpressionData.TryGetValue(out FStructFallback materialParameters, "Parameters"))
+                ProcessMaterialParameters(parameters, materialParameters);
         }
 
-        private static void GetParams(CMaterialParams2 parameters, FStructFallback? cachedParams) {
-            if (cachedParams == null ||
-                !cachedParams.TryGetValue(out FStructFallback materialParameters, "Parameters") ||
+        private void ProcessMaterialParameters(CMaterialParams2 parameters, FStructFallback? materialParameters) {
+            if (materialParameters == null ||
                 !materialParameters.TryGetAllValues(out FStructFallback[] runtimeEntries, "RuntimeEntries"))
                 return;
 
             if (materialParameters.TryGetValue(out float[] scalarValues, "ScalarValues") &&
-                runtimeEntries[0].TryGetValue(out FMaterialParameterInfo[] scalarParameterInfos, "ParameterInfos"))
+                runtimeEntries[0].TryGetValue(out FMaterialParameterInfo[] scalarParameterInfos, "ParameterInfos", "ParameterInfoSet"))
                 for (int i = 0; i < scalarParameterInfos.Length; i++)
                     parameters.Scalars[scalarParameterInfos[i].Name.Text] = scalarValues[i];
 
             if (materialParameters.TryGetValue(out FLinearColor[] vectorValues, "VectorValues") &&
-                runtimeEntries[1].TryGetValue(out FMaterialParameterInfo[] vectorParameterInfos, "ParameterInfos"))
+                runtimeEntries[1].TryGetValue(out FMaterialParameterInfo[] vectorParameterInfos, "ParameterInfos", "ParameterInfoSet"))
                 for (int i = 0; i < vectorParameterInfos.Length; i++)
                     parameters.Colors[vectorParameterInfos[i].Name.Text] = vectorValues[i];
 
-            if (materialParameters.TryGetValue(out FPackageIndex[] textureValues, "TextureValues") &&
-                runtimeEntries[2].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos")) {
+            if (materialParameters.TryGetValue(out object[] textureValues, "TextureValues") &&
+                runtimeEntries[Owner?.Provider?.Versions.Game > EGame.GAME_UE5_0 ? 3 : 2].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos", "ParameterInfoSet")) {
                 for (int i = 0; i < textureParameterInfos.Length; i++) {
                     var name = textureParameterInfos[i].Name.Text;
-                    if (!textureValues[i].TryLoad(out UTexture texture)) continue;
-
-                    parameters.VerifyTexture(name, texture);
+                    var textureRef = textureValues[i];
+                    UTexture? texture = default;
+                    switch (textureRef) {
+                        case FPackageIndex packageIndex when !packageIndex.TryLoad(out texture):
+                        case FSoftObjectPath softObjectPath when !softObjectPath.TryLoad(out texture):
+                            continue;
+                        default:
+                            parameters.VerifyTexture(name, texture);
+                            break;
+                    }
                 }
             }
         }

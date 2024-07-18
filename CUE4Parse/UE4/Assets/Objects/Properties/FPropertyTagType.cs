@@ -70,6 +70,29 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
                     }
                     return result;
                 }
+                case FPropertyTagType<UScriptSet> arrayProp when type.IsArray:
+                {
+                    var array = arrayProp.Value!.Properties;
+                    var contentType = type.GetElementType()!;
+                    var result = Array.CreateInstance(contentType, array.Count);
+                    for (var i = 0; i < array.Count; i++)
+                    {
+                        result.SetValue(array[i].GetValue(contentType), i);
+                    }
+                    return result;
+                }
+                case FPropertyTagType<UScriptSet> arrayProp when typeof(IList).IsAssignableFrom(type):
+                {
+                    var array = arrayProp.Value!.Properties;
+                    var contentType = type.GenericTypeArguments[0];
+                    var listType = typeof(List<>).MakeGenericType(contentType);
+                    var result = (IList) Activator.CreateInstance(listType, array.Count)!;
+                    foreach (var element in array)
+                    {
+                        result.Add(element.GetValue(contentType));
+                    }
+                    return result;
+                }
                 case FPropertyTagType<FPackageIndex> objProp when typeof(UObject).IsAssignableFrom(type):
                     if (objProp.Value!.TryLoad(out var objExport) && type.IsInstanceOfType(objExport))
                         return objExport;
@@ -92,7 +115,7 @@ namespace CUE4Parse.UE4.Assets.Objects.Properties
                     return null;
             }
         }
-        
+
         public T? GetValue<T>()
         {
             return (T?) GetValue(typeof(T));
