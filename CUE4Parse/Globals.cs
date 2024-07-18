@@ -13,6 +13,6 @@ namespace CUE4Parse
         public static bool AlwaysUseChunkedReader = false;
         public static bool AllowLargeFiles = false;
         public static long LargeFileLimit = int.MaxValue;
-        public static bool ReadShaderMaps = true;
+        public static bool ReadShaderMaps = false;
     }
 }
