@@ -269,8 +269,11 @@ public static class SkiaTextureDecoder {
             case EPixelFormat.PF_G8:
                 RgbConverter.Convert<ColorR<byte>, byte, ColorBGRA32, byte>(bytes, sizeX, sizeY, rented.Memory.Span);
                 break;
+            case EPixelFormat.PF_FloatRGB:
+                RgbConverter.Convert<ColorRGB<Half>, Half, ColorBGRA32, byte>(bytes, sizeX, sizeY, rented.Memory.Span);
+                break;
             case EPixelFormat.PF_FloatRGBA:
-                RgbConverter.Convert<ColorRGBA<float>, float, ColorBGRA32, byte>(bytes, sizeX, sizeY, rented.Memory.Span);
+                RgbConverter.Convert<ColorRGBA<Half>, Half, ColorBGRA32, byte>(bytes, sizeX, sizeY, rented.Memory.Span);
                 break;
             default: throw new NotImplementedException($"Unknown pixel format: {formatInfo.UnrealFormat}");
         }
