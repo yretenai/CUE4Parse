@@ -25,6 +25,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
         public UTexture? MobileMaskTexture;
 
         public FStructFallback? CachedExpressionData;
+        public FStructFallback? MaterialCachedExpressionData;
         public FMaterialTextureInfo[] TextureStreamingData = Array.Empty<FMaterialTextureInfo>();
         public List<FMaterialResource> LoadedMaterialResources = new();
 
@@ -44,7 +45,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
             var bSavedCachedExpressionData = FUE5ReleaseStreamObjectVersion.Get(Ar) >= FUE5ReleaseStreamObjectVersion.Type.MaterialInterfaceSavedCachedData && Ar.ReadBoolean();
             if (bSavedCachedExpressionData)
             {
-                CachedExpressionData = new FStructFallback(Ar, "MaterialCachedExpressionData");
+                MaterialCachedExpressionData = new FStructFallback(Ar, "MaterialCachedExpressionData");
             }
 
             if (Ar.Game == EGame.GAME_HogwartsLegacy) Ar.Position +=20; // FSHAHash
@@ -81,12 +82,13 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                 parameters.VerifyTexture(name, texture, false);
             }
 
-            // *****************************************
-            // CachedExpressionData ONLY AFTER THIS LINE
-            // *****************************************
+            GetParams(parameters, MaterialCachedExpressionData);
+            GetParams(parameters, CachedExpressionData);
+        }
 
-            if (CachedExpressionData == null ||
-                !CachedExpressionData.TryGetValue(out FStructFallback materialParameters, "Parameters") ||
+        private static void GetParams(CMaterialParams2 parameters, FStructFallback? cachedParams) {
+            if (cachedParams == null ||
+                !cachedParams.TryGetValue(out FStructFallback materialParameters, "Parameters") ||
                 !materialParameters.TryGetAllValues(out FStructFallback[] runtimeEntries, "RuntimeEntries"))
                 return;
 
@@ -101,10 +103,8 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                     parameters.Colors[vectorParameterInfos[i].Name.Text] = vectorValues[i];
 
             if (materialParameters.TryGetValue(out FPackageIndex[] textureValues, "TextureValues") &&
-                runtimeEntries[2].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos"))
-            {
-                for (int i = 0; i < textureParameterInfos.Length; i++)
-                {
+                runtimeEntries[2].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos")) {
+                for (int i = 0; i < textureParameterInfos.Length; i++) {
                     var name = textureParameterInfos[i].Name.Text;
                     if (!textureValues[i].TryLoad(out UTexture texture)) continue;
 

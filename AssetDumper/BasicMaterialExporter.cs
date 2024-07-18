@@ -87,34 +87,8 @@ public class BasicMaterialExporter : ExporterBase {
 
         MaterialData.Hierarchy.Add(unrealMaterial.Name);
 
-        var cachedExpressionData = unrealMaterial.CachedExpressionData;
-        if (cachedExpressionData != null &&
-            cachedExpressionData.TryGetValue(out FStructFallback materialParameters, "Parameters") &&
-            materialParameters.TryGetAllValues(out FStructFallback[] runtimeEntries, "RuntimeEntries")) {
-            if (materialParameters.TryGetValue(out float[] scalarValues, "ScalarValues") &&
-                runtimeEntries[0].TryGetValue(out FMaterialParameterInfo[] scalarParameterInfos, "ParameterInfos")) {
-                for (var index = 0; index < scalarParameterInfos.Length; index++) {
-                    var scalarParameter = scalarParameterInfos[index];
-                    MaterialData.Scalars[scalarParameter.Name.Text] = scalarValues[index];
-                }
-            }
-
-            if (materialParameters.TryGetValue(out FLinearColor[] vectorValues, "VectorValues") &&
-                runtimeEntries[1].TryGetValue(out FMaterialParameterInfo[] vectorParameterInfos, "ParameterInfos")) {
-                for (var index = 0; index < vectorParameterInfos.Length; index++) {
-                    var vectorParameter = vectorParameterInfos[index];
-                    MaterialData.Vectors[vectorParameter.Name.Text] = vectorValues[index];
-                }
-            }
-
-            if (materialParameters.TryGetValue(out FPackageIndex[] textureValues, "TextureValues") &&
-                runtimeEntries[2].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos")) {
-                for (var index = 0; index < textureParameterInfos.Length; index++) {
-                    var textureParameter = textureParameterInfos[index];
-                    MaterialData.MergeTexture(textureParameter.Name.Text, textureValues[index].ResolvedObject?.GetPathName());
-                }
-            }
-        }
+        ProcessCachedExpressionData(unrealMaterial.CachedExpressionData);
+        ProcessCachedExpressionData(unrealMaterial.MaterialCachedExpressionData);
 
         switch (unrealMaterial) {
             case UMaterialInstance materialInstance: {
@@ -144,7 +118,7 @@ public class BasicMaterialExporter : ExporterBase {
 
                 break;
             }
-            case UMaterial material: {
+            case UMaterial { MaterialCachedExpressionData: null } material: {
                 foreach (var texture in material.ReferencedTextures) {
                     MaterialData.MergeTexture(texture.Name, texture.GetPathName(), false);
                 }
@@ -164,6 +138,36 @@ public class BasicMaterialExporter : ExporterBase {
             subsurfImport.TryLoad(out var subsurfObj) &&
             subsurfObj.TryGetValue<FStructFallback>(out var subsurfProfile, "Settings")) {
             MaterialData.SubsurfaceProfile = subsurfProfile;
+        }
+    }
+
+    private void ProcessCachedExpressionData(FStructFallback? cachedExpressionData) {
+        if (cachedExpressionData != null &&
+            cachedExpressionData.TryGetValue(out FStructFallback materialParameters, "Parameters") &&
+            materialParameters.TryGetAllValues(out FStructFallback[] runtimeEntries, "RuntimeEntries")) {
+            if (materialParameters.TryGetValue(out float[] scalarValues, "ScalarValues") &&
+                runtimeEntries[0].TryGetValue(out FMaterialParameterInfo[] scalarParameterInfos, "ParameterInfos")) {
+                for (var index = 0; index < scalarParameterInfos.Length; index++) {
+                    var scalarParameter = scalarParameterInfos[index];
+                    MaterialData.Scalars[scalarParameter.Name.Text] = scalarValues[index];
+                }
+            }
+
+            if (materialParameters.TryGetValue(out FLinearColor[] vectorValues, "VectorValues") &&
+                runtimeEntries[1].TryGetValue(out FMaterialParameterInfo[] vectorParameterInfos, "ParameterInfos")) {
+                for (var index = 0; index < vectorParameterInfos.Length; index++) {
+                    var vectorParameter = vectorParameterInfos[index];
+                    MaterialData.Vectors[vectorParameter.Name.Text] = vectorValues[index];
+                }
+            }
+
+            if (materialParameters.TryGetValue(out FPackageIndex[] textureValues, "TextureValues") &&
+                runtimeEntries[2].TryGetValue(out FMaterialParameterInfo[] textureParameterInfos, "ParameterInfos")) {
+                for (var index = 0; index < textureParameterInfos.Length; index++) {
+                    var textureParameter = textureParameterInfos[index];
+                    MaterialData.MergeTexture(textureParameter.Name.Text, textureValues[index].ResolvedObject?.GetPathName());
+                }
+            }
         }
     }
 
