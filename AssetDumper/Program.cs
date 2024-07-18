@@ -217,6 +217,7 @@ public static class Program {
             Globals.SkipObjectClasses.Add("LevelSequence");
             Globals.SkipObjectClasses.Add("TimelineComponent");
             Globals.SkipObjectClasses.Add("NiagaraScript");
+            Globals.SkipObjectClasses.Add("NiagaraMeshRendererProperties");
         }
 
         foreach (var keyGuid in Provider.RequiredKeys) {
@@ -263,6 +264,10 @@ public static class Program {
         filesEnumerable = filesEnumerable.OrderBy(x => Path.GetFileName(((VfsEntry) x.Value).Vfs.Path).Replace('.', '_'), new NaturalStringComparer(StringComparison.Ordinal))
                                          .ThenBy(x => x.Key, new NaturalStringComparer(StringComparison.Ordinal));
 
+        if (!string.IsNullOrEmpty(flags.Skip)) {
+            filesEnumerable = filesEnumerable.SkipWhile(x => !x.Key.Contains(flags.Skip, StringComparison.OrdinalIgnoreCase));
+        }
+
         var files = filesEnumerable.ToArray();
         var count = (float) files.Length;
         var processed = 0;
@@ -284,8 +289,9 @@ public static class Program {
             var pc = ++processed / count * 100;
 
             var historyType = HistoryType.New;
+            var historyEntry = default(History.HistoryEntry);
             if (flags.StubHistory == false && oldHistory != null && history != null) {
-                var historyEntry = await history.Add(Provider, gameFile);
+                historyEntry = await history.Hash(Provider, gameFile);
                 historyType = oldHistory.Has(history, historyEntry);
             }
 
@@ -319,6 +325,7 @@ public static class Program {
             var targetGameFile = Path.Combine(target, "Content", normalizedGamePath);
             var targetJsonPath = Path.Combine(target, "Json", normalizedGamePath + ".json");
 
+            var hasFailed = false;
             try {
                 var ext = gameFile.Extension.ToLowerInvariant();
                 switch (ext) {
@@ -501,6 +508,7 @@ public static class Program {
                                         }
                                     }));
                                 } catch (Exception e) {
+                                    hasFailed = true;
                                     Log.Error(e, "Failed to convert UObject exports to JSON");
                                 }
                             }
@@ -668,11 +676,13 @@ public static class Program {
                                     if (Debugger.IsAttached) {
                                         throw;
                                     }
+                                    hasFailed = true;
 
                                     Log.Error(e, "Failed to convert UObject export #{Export}", exportIndex);
                                 }
                             }
                         } catch (Exception e) {
+                            hasFailed = true;
                             Log.Error(e, "Failed to process file");
                         }
 
@@ -680,8 +690,14 @@ public static class Program {
                     }
                 }
 
-                if (!flags.StubHistory && history != null && (processed % 1024) == 0) {
-                    history.Save(targetHistoryPath);
+                if (!flags.StubHistory && history != null) {
+                    if (historyEntry != default && !hasFailed) {
+                        history.Add(historyEntry);
+                    }
+
+                    if (processed % 1024 == 0) {
+                        history.Save(targetHistoryPath);
+                    }
                 }
             } catch (Exception e) {
                 Log.Error(e, "Unknown error");

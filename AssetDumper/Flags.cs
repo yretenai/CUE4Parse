@@ -147,4 +147,7 @@ public record Flags : CommandLineFlags {
 
     [Flag("no-blueprints", Aliases = ["no-bp"], Help = "Do not output merged blueprints", Category = "AssetDumper")]
     public bool NoBlueprints { get; set; }
+
+    [Flag("skip", Help = "Skip until this path is found", Category = "AssetDumper")]
+    public string? Skip { get; set; }
 }

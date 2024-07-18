@@ -62,10 +62,9 @@ public enum HistoryType {
 }
 
 public class History {
-    private readonly HashAlgorithm? HashAlgorithm;
-    private readonly bool ReadOnly;
-
-    private readonly Dictionary<string, HistoryEntry> Entries = new();
+    private HashAlgorithm? HashAlgorithm { get; }
+    private bool ReadOnly { get; }
+    private Dictionary<string, HistoryEntry> Entries { get; }= new();
 
     public HistoryOptions Options { get; }
 
@@ -167,7 +166,7 @@ public class History {
         }
     }
 
-    public async Task<HistoryEntry> Add(AbstractVfsFileProvider provider, GameFile gameFile) {
+    public async Task<HistoryEntry> Hash(AbstractVfsFileProvider provider, GameFile gameFile) {
         if (ReadOnly) {
             return new HistoryEntry();
         }
@@ -182,14 +181,25 @@ public class History {
             },
             Path = gameFile.Path,
         };
-
-        Entries[entry.Path] = entry;
         return entry;
+    }
+
+    public async Task<HistoryEntry> Add(AbstractVfsFileProvider provider, GameFile gameFile) {
+        if (ReadOnly) {
+            return default;
+        }
+
+        var entry = Entries[gameFile.Path] = await Hash(provider, gameFile);
+        return entry;
+    }
+
+    public void Add(HistoryEntry entry) {
+        Entries[entry.Path] = entry;
     }
 
     private async Task<uint> CalculateHashForFile(GameFile gameFile) {
         if (ReadOnly) {
-            return 0;
+            return default;
         }
 
         var data = await gameFile.TryReadAsync();
@@ -198,7 +208,7 @@ public class History {
 
     private async Task<uint> CalculateHashForFile(IFileProvider provider, string path) {
         if (ReadOnly) {
-            return 0;
+            return default;
         }
 
         return !provider.TryFindGameFile(path, out var gameFile) ? 0 : await CalculateHashForFile(gameFile);
@@ -251,7 +261,7 @@ public class History {
                 ExportHash = ExportHash,
                 BulkHash = BulkHash,
                 UptnlHash = uint.MaxValue,
-                TextLength = TextLength
+                TextLength = TextLength,
             };
         }
     }
