@@ -12,7 +12,6 @@ using AssetRipper.TextureDecoder.Rgb.Formats;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.Compression;
 using CUE4Parse.UE4.Exceptions;
-using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.Utils;
 using SkiaSharp;
 

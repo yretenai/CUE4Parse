@@ -4,7 +4,6 @@ using System.Text;
 using CUE4Parse;
 using CUE4Parse_Conversion;
 using CUE4Parse_Conversion.Animations;
-using CUE4Parse_Conversion.Materials;
 using CUE4Parse_Conversion.Meshes;
 using CUE4Parse_Conversion.Sounds;
 using CUE4Parse_Conversion.Textures;
