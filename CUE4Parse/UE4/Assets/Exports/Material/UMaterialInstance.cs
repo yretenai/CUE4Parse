@@ -41,17 +41,9 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
                         StaticParameters = new FStaticParameterSet(Ar);
                     }
 
-#if READ_SHADER_MAPS
                     DeserializeInlineShaderMaps(Ar, LoadedMaterialResources);
-#else
-                    Ar.Position = validPos; // TODO This skips every data after the inline shader map data, find a way to properly skip it
-#endif
                 }
             }
-
-#if !READ_SHADER_MAPS
-            Ar.Position = validPos;
-#endif
         }
 
         public override void GetParams(CMaterialParams2 parameters, EMaterialFormat format)

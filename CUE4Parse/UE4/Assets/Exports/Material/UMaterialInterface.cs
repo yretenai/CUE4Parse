@@ -119,6 +119,11 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
             if (numLoadedResources > 0)
             {
                 var resourceAr = new FMaterialResourceProxyReader(Ar);
+                if (!Globals.ReadShaderMaps) {
+                    Ar.Position += resourceAr.NumBytes;
+                    return;
+                }
+
                 for (var resourceIndex = 0; resourceIndex < numLoadedResources; ++resourceIndex)
                 {
                     var loadedResource = new FMaterialResource();

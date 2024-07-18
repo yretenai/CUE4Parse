@@ -13,13 +13,14 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
         public readonly FNameEntrySerialized[] NameMap;
         public FMaterialResourceLocOnDisk[] Locs;
         private long _offsetToFirstResource;
+        public readonly int NumBytes;
 
         public FMaterialResourceProxyReader(FArchive Ar) : base(Ar.Versions)
         {
             InnerArchive = Ar;
             NameMap = InnerArchive.ReadArray(() => new FNameEntrySerialized(Ar));
             Locs = InnerArchive.ReadArray<FMaterialResourceLocOnDisk>();
-            var _ = InnerArchive.Read<int>(); // NumBytes
+            NumBytes = InnerArchive.Read<int>();
             _offsetToFirstResource = InnerArchive.Position;
         }
 

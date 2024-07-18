@@ -57,11 +57,7 @@ namespace CUE4Parse.UE4.Assets.Exports.Material
 
             if (Ar.Ver >= EUnrealEngineObjectUE4Version.PURGED_FMATERIAL_COMPILE_OUTPUTS)
             {
-#if READ_SHADER_MAPS
                 DeserializeInlineShaderMaps(Ar, LoadedMaterialResources);
-#else
-                Ar.Position = validPos;
-#endif
             }
         }
 
