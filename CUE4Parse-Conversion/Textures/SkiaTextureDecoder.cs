@@ -12,6 +12,7 @@ using AssetRipper.TextureDecoder.Rgb.Formats;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.Compression;
 using CUE4Parse.UE4.Exceptions;
+using CUE4Parse.UE4.Objects.Core.Math;
 using CUE4Parse.Utils;
 using SkiaSharp;
 
@@ -69,6 +70,16 @@ public static class SkiaTextureDecoder {
             var imageBytes = tempInfo.BytesSize;
             var pixelDataPtr = NativeMemory.Alloc((nuint) imageBytes);
             var result = new Span<byte>(pixelDataPtr, imageBytes);
+            // TODO: what if > 1 fallback?
+            if (vt.LayerFallbackColors.Length > 0) {
+                var fallback = vt.LayerFallbackColors[0].ToFColor(false);
+                for (var pix = 0; pix < result.Length; pix += 4) {
+                    result[pix] = fallback.B;
+                    result[pix + 1] = fallback.G;
+                    result[pix + 2] = fallback.R;
+                    result[pix + 3] = fallback.A;
+                }
+            }
 
             for (uint layer = 0; layer < vt.NumLayers; layer++) {
                 var layerFormat = vt.LayerTypes[layer];
