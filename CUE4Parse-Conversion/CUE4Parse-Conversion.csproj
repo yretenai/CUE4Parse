@@ -20,9 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpGLTF.Core" Version="1.0.0" />
-    <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
+    <PackageReference Include="SharpGLTF.Core" Version="1.0.1" />
+    <PackageReference Include="SharpGLTF.Toolkit" Version="1.0.1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
     <PackageReference Include="SkiaSharp" Version="3.0.0-preview.3.1" />
     <PackageReference Include="AssetRipper.TextureDecoder" Version="2.2.0" />
   </ItemGroup>
