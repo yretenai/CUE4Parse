@@ -1188,8 +1188,6 @@ public class EX_StringConst : KismetExpression<string>
     public EX_StringConst(FKismetArchive Ar)
     {
         Value = Ar.XFERSTRING();
-        Ar.Position++;
-        Ar.Index++;
     }
 }
 
@@ -1331,8 +1329,6 @@ public class EX_UnicodeStringConst : KismetExpression<string>
     public EX_UnicodeStringConst(FKismetArchive Ar)
     {
         Value = Ar.XFERUNICODESTRING();
-        Ar.Position += 2;
-        Ar.Index += 2;
     }
 }
 

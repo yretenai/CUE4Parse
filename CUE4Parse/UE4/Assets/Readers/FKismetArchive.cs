@@ -137,9 +137,12 @@ public class FKismetArchive : FArchive
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string XFERSTRING()
     {
-        var eos = Array.IndexOf<byte>(_data, 0, (int)Position);
-        if (eos == -1) throw new ParserException("Couldn't find end of the string");
-        return Encoding.ASCII.GetString(ReadBytes(eos-(int)Position));
+        var length = _data.AsSpan((int)Position).IndexOf((byte) 0);
+        if (length == -1) throw new ParserException("Couldn't find end of the string");
+        var v = Encoding.ASCII.GetString(ReadBytes(length));
+        Position++; // skip null terminator.
+        Index++;
+        return v;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -149,6 +152,7 @@ public class FKismetArchive : FArchive
         if (length == -1) throw new ParserException("Couldn't find end of the string");
         var v = Encoding.Unicode.GetString(ReadBytes(length * 2));
         Position += 2; // skip null terminator.
+        Index += 2;
         return v;
     }
 
