@@ -56,7 +56,7 @@ namespace CUE4Parse.UE4.Pak
         public override byte[] Extract(VfsEntry entry)
         {
             if (entry is not FPakEntry pakEntry || entry.Vfs != this) throw new ArgumentException($"Wrong pak file reader, required {entry.Vfs.Name}, this is {Name}");
-            return Read(pakEntry, 0, pakEntry.UncompressedSize).ToArray();
+            return Read(pakEntry, 0, pakEntry.UncompressedSize);
         }
 
         public override IReadOnlyDictionary<string, GameFile> Mount(bool caseInsensitive = false)
@@ -295,7 +295,7 @@ namespace CUE4Parse.UE4.Pak
             Ar.Dispose();
         }
 
-        public Span<byte> Read(FPakEntry pakEntry, long offset, long size)
+        public byte[] Read(FPakEntry pakEntry, long offset, long size)
         {
             // If this reader is used as a concurrent reader create a clone of the main reader to provide thread safety
             var reader = IsConcurrent ? (FArchive)Ar.Clone() : Ar;
@@ -338,8 +338,10 @@ namespace CUE4Parse.UE4.Pak
                         break;
                 }
 
-                return uncompressed.AsSpan(shift, (int)size);
+                return uncompressed[shift..((int)size + shift)];
             }
+
+            if (Game is EGame.GAME_MarvelRivals or EGame.GAME_OperationApocalypse) return NetEaseExtract(reader, pakEntry);
 
             // Pak Entry is written before the file data,
             // but it's the same as the one from the index, just without a name
@@ -355,7 +357,7 @@ namespace CUE4Parse.UE4.Pak
             }
 
             reader.Position = pakEntry.Offset + offset + pakEntry.StructSize; // Doesn't seem to be the case with older pak versions
-            return ReadAndDecrypt(readSize, reader, pakEntry.IsEncrypted).AsSpan(readShift, (int)size);
+            return ReadAndDecrypt(readSize, reader, pakEntry.IsEncrypted)[readShift..((int)size + readShift)];
         }
     }
 }
