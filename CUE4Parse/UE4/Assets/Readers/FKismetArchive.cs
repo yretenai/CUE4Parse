@@ -149,10 +149,14 @@ public class FKismetArchive : FArchive
         Span<byte> terminator = stackalloc byte[2];
         do
         {
-            length += _data.AsSpan(pos + length + 1).IndexOf(terminator) + 1;
+            var index = _data.AsSpan(pos + length + 1).IndexOf(terminator);
+            if (index == -1)
+                break;
+
+            length += index + 1;
         }
         while (length % 2 != 0 || length == -1);
-        if (length == -1) throw new ParserException("Couldn't find end of the unicode string");
+        if (length < 0) throw new ParserException("Couldn't find end of the unicode string");
         return Encoding.Unicode.GetString(ReadBytes(length));
     }
 
