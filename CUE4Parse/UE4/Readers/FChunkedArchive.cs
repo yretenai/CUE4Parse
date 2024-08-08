@@ -17,7 +17,7 @@ public abstract class FChunkedArchive : FArchive
         Buffer = ArrayPool<byte>.Shared.Rent(BUFFER_SIZE);
     }
 
-    protected abstract Span<byte> ReadChunks(long offset, long size);
+    protected abstract byte[] ReadChunks(long offset, long size);
 
     public override int Read(byte[] buffer, int offset, int count)
     {
@@ -42,7 +42,7 @@ public abstract class FChunkedArchive : FArchive
                     BufferOffset = Position.Align(BUFFER_SIZE) - BUFFER_SIZE;
 
                 if ((int) (Position - BufferOffset) + n <= BUFFER_SIZE) //overflow check
-                    ReadChunks(BufferOffset, blockSize).CopyTo(Buffer);
+                    ReadChunks(BufferOffset, blockSize).AsSpan().CopyTo(Buffer);
                 else
                     BufferOffset = -1; // reset buffer position because we didn't actually read
             }

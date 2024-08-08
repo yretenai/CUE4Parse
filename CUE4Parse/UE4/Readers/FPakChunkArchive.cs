@@ -24,9 +24,9 @@ public class FPakChunkArchive : FChunkedArchive
         return instance;
     }
 
-    protected override Span<byte> ReadChunks(long offset, long size)
+    protected override byte[] ReadChunks(long offset, long size)
     {
         var remaining = Math.Min(size, Entry.UncompressedSize - offset);
-        return remaining <= 0 ? Span<byte>.Empty : Entry.PakFileReader.Read(Entry, offset, remaining);
+        return remaining <= 0 ? [] : Entry.PakFileReader.Read(Entry, offset, remaining);
     }
 }
