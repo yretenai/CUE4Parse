@@ -24,9 +24,9 @@ public class FIoChunkArchive : FChunkedArchive
         return instance;
     }
 
-    protected override Span<byte> ReadChunks(long offset, long size)
+    protected override byte[] ReadChunks(long offset, long size)
     {
         var remaining = Math.Min(size, Entry.Size - offset);
-        return remaining <= 0 ? Span<byte>.Empty : Entry.IoStoreReader.Read(offset + Entry.Offset, remaining);
+        return remaining <= 0 ? [] : Entry.IoStoreReader.Read(offset + Entry.Offset, remaining);
     }
 }
