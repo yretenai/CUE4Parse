@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using CUE4Parse.UE4.Exceptions;
 using CUE4Parse.UE4.Kismet;
@@ -144,10 +145,11 @@ public class FKismetArchive : FArchive
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string XFERUNICODESTRING()
     {
-        var length = _data.AsSpan((int)Position).IndexOf(stackalloc byte[2]);
+        var length = MemoryMarshal.Cast<byte, ushort>(_data.AsSpan((int)Position)).IndexOf((ushort) 0);
         if (length == -1) throw new ParserException("Couldn't find end of the string");
-        if (length % 2 == 1) length++;
-        return Encoding.Unicode.GetString(ReadBytes(length));
+        var v = Encoding.Unicode.GetString(ReadBytes(length * 2));
+        Position += 2; // skip null terminator.
+        return v;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
