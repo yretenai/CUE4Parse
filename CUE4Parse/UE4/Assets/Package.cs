@@ -115,7 +115,7 @@ namespace CUE4Parse.UE4.Assets
                     export.ExportObject = new Lazy<UObject>(() =>
                     {
                         // Create
-                        var obj = ConstructObject(ResolvePackageIndex(export.ClassIndex)?.Object?.Value as UStruct);
+                        var obj = ConstructObject(ResolvePackageIndex(export.ClassIndex)?.Object?.Value as UStruct, this);
                         obj.Name = export.ObjectName.Text;
                         obj.Outer = (ResolvePackageIndex(export.OuterIndex) as ResolvedExportObject)?.Object.Value ?? this;
                         obj.Super = ResolvePackageIndex(export.SuperIndex) as ResolvedExportObject;
@@ -273,7 +273,12 @@ namespace CUE4Parse.UE4.Assets
             public override FName Name => _import.ObjectName;
             public override ResolvedObject? Outer => Package.ResolvePackageIndex(_import.OuterIndex);
             public override ResolvedObject Class => new ResolvedLoadedObject(new UScriptClass(_import.ClassName.Text));
-            public override Lazy<UObject>? Object => _import.ClassName.Text == "Class" ? new(() => new UScriptClass(Name.Text)) : null;
+            public override Lazy<UObject>? Object => _import.ClassName.Text switch
+            {
+                "Class" => new(() => new UScriptClass(Name.Text)),
+                "SharpClass" => new(() => new USharpClass(Name.Text)),
+                _ => null
+            };
         }
 
         private class ExportLoader
@@ -392,7 +397,6 @@ namespace CUE4Parse.UE4.Assets
                 {
                     _object.Outer = _package;
                 }
-                _object.ClassIndex = _export.ClassIndex;
                 _object.Super = _package.ResolvePackageIndex(_export.SuperIndex) as ResolvedExportObject;
                 _object.Template = _package.ResolvePackageIndex(_export.TemplateIndex) as ResolvedExportObject;
                 _object.Flags |= (EObjectFlags) _export.ObjectFlags; // We give loaded objects the RF_WasLoaded flag in ConstructObject, so don't remove it again in here

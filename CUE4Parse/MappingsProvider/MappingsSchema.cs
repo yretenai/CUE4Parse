@@ -161,6 +161,10 @@ namespace CUE4Parse.MappingsProvider
                     Struct = structObj?.Object?.Value as UStruct;
                     StructType = structObj?.Name.Text;
                     break;
+                case FOptionalProperty optional:
+                    value = optional.ValueProperty;
+                    if (value != null) InnerType = new PropertyType(value);
+                    break;
             }
         }
 

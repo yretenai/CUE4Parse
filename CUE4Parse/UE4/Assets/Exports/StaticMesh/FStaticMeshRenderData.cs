@@ -67,6 +67,16 @@ public class FStaticMeshRenderData
         if (Ar.Game >= EGame.GAME_UE5_0)
         {
             NaniteResources = new FNaniteResources(Ar);
+            
+            if (Ar.Game >= EGame.GAME_UE5_5)
+            {
+                var bHasRayTracingProxy = Ar.ReadBoolean();
+                if (bHasRayTracingProxy)
+                {
+                    var rayTracingProxy = new FStaticMeshRayTracingProxy(Ar);
+                }
+            }
+            
             SerializeInlineDataRepresentations(Ar);
         }
 
@@ -129,6 +139,8 @@ public class FStaticMeshRenderData
             }
             return;
         }
+
+        if (Ar.Game == EGame.GAME_DeltaForceHawkOps) Ar.Position += 4;
 
         ScreenSize = new float[Ar.Game >= EGame.GAME_UE4_9 ? MAX_STATIC_LODS_UE4 : 4];
         for (var i = 0; i < ScreenSize.Length; ++i)
